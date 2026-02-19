@@ -7,7 +7,6 @@ package database
 
 import (
 	"context"
-	"time"
 )
 
 const clearUsers = `-- name: ClearUsers :exec
@@ -20,23 +19,15 @@ func (q *Queries) ClearUsers(ctx context.Context) error {
 }
 
 const createUser = `-- name: CreateUser :one
-INSERT INTO users (id, created_at, username)
+INSERT INTO users (username)
 VALUES (
-    $1,
-    $2,
-    $3
+    $1
 )
 RETURNING id, created_at, username
 `
 
-type CreateUserParams struct {
-	ID        int32
-	CreatedAt time.Time
-	Username  string
-}
-
-func (q *Queries) CreateUser(ctx context.Context, arg CreateUserParams) (User, error) {
-	row := q.db.QueryRowContext(ctx, createUser, arg.ID, arg.CreatedAt, arg.Username)
+func (q *Queries) CreateUser(ctx context.Context, username string) (User, error) {
+	row := q.db.QueryRowContext(ctx, createUser, username)
 	var i User
 	err := row.Scan(&i.ID, &i.CreatedAt, &i.Username)
 	return i, err

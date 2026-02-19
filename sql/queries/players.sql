@@ -1,13 +1,9 @@
 -- name: CreatePlayer :one
-INSERT INTO players (id, created_at, user_id, game_id, name, skindancer, class)
+INSERT INTO players (user_id, game_id, name)
 VALUES (
     $1,
     $2,
-    $3,
-    $4,
-    $5,
-    false,
-    NULL
+    $3
 )
 RETURNING *;
 

@@ -6,14 +6,112 @@ package database
 
 import (
 	"database/sql"
+	"database/sql/driver"
+	"fmt"
 	"time"
 )
+
+type ClassType string
+
+const (
+	ClassTypeVintishNobleman  ClassType = "vintish_nobleman"
+	ClassTypeAturanNobleman   ClassType = "aturan_nobleman"
+	ClassTypeYllishCommoner   ClassType = "yllish_commoner"
+	ClassTypeCealdishCommoner ClassType = "cealdish_commoner"
+	ClassTypeEdemaRuh         ClassType = "edema_ruh"
+)
+
+func (e *ClassType) Scan(src interface{}) error {
+	switch s := src.(type) {
+	case []byte:
+		*e = ClassType(s)
+	case string:
+		*e = ClassType(s)
+	default:
+		return fmt.Errorf("unsupported scan type for ClassType: %T", src)
+	}
+	return nil
+}
+
+type NullClassType struct {
+	ClassType ClassType
+	Valid     bool // Valid is true if ClassType is not NULL
+}
+
+// Scan implements the Scanner interface.
+func (ns *NullClassType) Scan(value interface{}) error {
+	if value == nil {
+		ns.ClassType, ns.Valid = "", false
+		return nil
+	}
+	ns.Valid = true
+	return ns.ClassType.Scan(value)
+}
+
+// Value implements the driver Valuer interface.
+func (ns NullClassType) Value() (driver.Value, error) {
+	if !ns.Valid {
+		return nil, nil
+	}
+	return string(ns.ClassType), nil
+}
+
+type LodgingType string
+
+const (
+	LodgingTypeStreets         LodgingType = "streets"
+	LodgingTypeUnderthing      LodgingType = "underthing"
+	LodgingTypeMews            LodgingType = "mews"
+	LodgingTypeAnkers          LodgingType = "ankers"
+	LodgingTypeKingsDrab       LodgingType = "kings_drab"
+	LodgingTypeGreyMan         LodgingType = "grey_man"
+	LodgingTypeGoldenPony      LodgingType = "golden_pony"
+	LodgingTypeWindyTower      LodgingType = "windy_tower"
+	LodgingTypeHorseAndFour    LodgingType = "horse_and_four"
+	LodgingTypePearlOfImre     LodgingType = "pearl_of_imre"
+	LodgingTypeSpindleAndDraft LodgingType = "spindle_and_draft"
+)
+
+func (e *LodgingType) Scan(src interface{}) error {
+	switch s := src.(type) {
+	case []byte:
+		*e = LodgingType(s)
+	case string:
+		*e = LodgingType(s)
+	default:
+		return fmt.Errorf("unsupported scan type for LodgingType: %T", src)
+	}
+	return nil
+}
+
+type NullLodgingType struct {
+	LodgingType LodgingType
+	Valid       bool // Valid is true if LodgingType is not NULL
+}
+
+// Scan implements the Scanner interface.
+func (ns *NullLodgingType) Scan(value interface{}) error {
+	if value == nil {
+		ns.LodgingType, ns.Valid = "", false
+		return nil
+	}
+	ns.Valid = true
+	return ns.LodgingType.Scan(value)
+}
+
+// Value implements the driver Valuer interface.
+func (ns NullLodgingType) Value() (driver.Value, error) {
+	if !ns.Valid {
+		return nil, nil
+	}
+	return string(ns.LodgingType), nil
+}
 
 type Action struct {
 	ID               int32
 	CreatedAt        time.Time
 	PlayerTurnID     sql.NullInt32
-	Lodging          sql.NullString
+	Lodging          NullLodgingType
 	VisitImre        sql.NullBool
 	AttendUniversity sql.NullBool
 }
@@ -96,7 +194,7 @@ type Player struct {
 	GameID     int32
 	Name       sql.NullString
 	Skindancer sql.NullBool
-	Class      sql.NullString
+	Class      NullClassType
 }
 
 type PlayerStatus struct {

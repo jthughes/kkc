@@ -8,7 +8,6 @@ package database
 import (
 	"context"
 	"database/sql"
-	"time"
 )
 
 const clearPlayers = `-- name: ClearPlayers :exec
@@ -21,35 +20,23 @@ func (q *Queries) ClearPlayers(ctx context.Context) error {
 }
 
 const createPlayer = `-- name: CreatePlayer :one
-INSERT INTO players (id, created_at, user_id, game_id, name, skindancer, class)
+INSERT INTO players (user_id, game_id, name)
 VALUES (
     $1,
     $2,
-    $3,
-    $4,
-    $5,
-    false,
-    NULL
+    $3
 )
 RETURNING id, created_at, user_id, game_id, name, skindancer, class
 `
 
 type CreatePlayerParams struct {
-	ID        int32
-	CreatedAt time.Time
-	UserID    int32
-	GameID    int32
-	Name      sql.NullString
+	UserID int32
+	GameID int32
+	Name   sql.NullString
 }
 
 func (q *Queries) CreatePlayer(ctx context.Context, arg CreatePlayerParams) (Player, error) {
-	row := q.db.QueryRowContext(ctx, createPlayer,
-		arg.ID,
-		arg.CreatedAt,
-		arg.UserID,
-		arg.GameID,
-		arg.Name,
-	)
+	row := q.db.QueryRowContext(ctx, createPlayer, arg.UserID, arg.GameID, arg.Name)
 	var i Player
 	err := row.Scan(
 		&i.ID,

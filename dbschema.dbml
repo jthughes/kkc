@@ -2,28 +2,51 @@
 // Docs: https://dbml.dbdiagram.io/docs
 
 Table users {
-  id integer [primary key]
-  created_at timestamp [not null]
+  id integer [primary key, increment]
+  created_at timestamp [not null, default: `now()`]
   username varchar [not null, unique]
 
 }
+// Ref: games.id < players.game_id
+
+// Ref: users.id < players.user_id
+
+// Ref: users.id < games.game_master
+
+
+Table games {
+  id integer [primary key, increment]
+  created_at timestamp [not null, default: `now()`]
+  game_master integer [ref: > users.id, not null]
+  name varchar
+  type varchar
+  type_number varchar
+  // current_turn_id integer
+}
 
 Table players {
-  id integer [primary key]
-  created_at timestamp [not null]
-  user_id integer [not null]
-  game_id integer [not null]
+  id integer [primary key, increment]
+  created_at timestamp [not null, default: `now()`]
+  user_id integer [ref: > users.id, not null]
+  game_id integer [ref: > games.id, not null]
 
   name varchar
 
   skindancer bool [default: false]
-  class varchar
+  class class_type
 }
 
+Enum class_type {
+  vintish_nobleman
+  aturan_nobleman
+  yllish_commoner
+  cealdish_commoner
+  edema_ruh
+}
 
 Table turns {
-  id integer [primary key]
-  created_at timestamp [not null]
+  id integer [primary key, increment]
+  created_at timestamp [not null, default: `now()`]
 
   game_id integer [ref: > games.id]
 
@@ -37,8 +60,8 @@ Table turns {
 }
 
 Table player_status {
-  id integer [primary key]
-  created_at timestamp [not null]
+  id integer [primary key, increment]
+  created_at timestamp [not null, default: `now()`]
 
   turn_id integer [ref: > turns.id]
 
@@ -68,24 +91,28 @@ Table player_status {
   // action periods?
 }
 
-Table games {
-  id integer [primary key]
-  created_at timestamp [not null]
-  game_master integer [not null]
-  name varchar
-  type varchar
-  type_number varchar
-  // current_turn_id integer
+Enum lodging_type {
+  streets
+  underthing
+  mews
+  ankers
+  kings_drab
+  grey_man
+  golden_pony
+  windy_tower
+  horse_and_four
+  pearl_of_imre
+  spindle_and_draft
 }
 
 
 Table actions {
-  id integer [primary key]
-  created_at timestamp [not null]
+  id integer [primary key, increment]
+  created_at timestamp [not null, default: `now()`]
 
   player_turn_id integer [ref: > player_turn.id]
 
-  lodging varchar
+  lodging lodging_type
   visit_imre bool [default: false]
   attend_university bool [default: false]
 
@@ -93,8 +120,8 @@ Table actions {
 
 
 Table player_turn {
-  id integer [primary key]
-  created_at timestamp [not null]
+  id integer [primary key, increment]
+  created_at timestamp [not null, default: `now()`]
   player_id integer [ref: > players.id]
   turn_id integer [ref: > turns.id]
 
@@ -107,8 +134,8 @@ Table player_turn {
 
 
 Table complaints {
-  id integer [primary key]
-  created_at timestamp [not null]
+  id integer [primary key, increment]
+  created_at timestamp [not null, default: `now()`]
   action_id integer [ref: > actions.id]
   // player_id integer [ref: > players.id]
   target_id integer [ref: - players.id]
@@ -116,8 +143,8 @@ Table complaints {
 
 
 Table imre_actions {
-  id integer [primary key]
-  created_at timestamp [not null]
+  id integer [primary key, increment]
+  created_at timestamp [not null, default: `now()`]
   action_id integer [ref: > actions.id]
 
   eolian_pipes bool
@@ -148,8 +175,8 @@ Table imre_actions {
 
 
 Table contracts {
-  id integer [primary key]
-  created_at timestamp [not null]
+  id integer [primary key, increment]
+  created_at timestamp [not null, default: `now()`]
 
   game_id integer [ref: > games.id]
 
@@ -163,8 +190,8 @@ Table contracts {
 }
 
 Table imre_contract_action {
-  id integer [primary key]
-  created_at timestamp [not null]
+  id integer [primary key, increment]
+  created_at timestamp [not null, default: `now()`]
 
   imre_action_id integer [ref: > imre_actions.id]
   contract_id integer [ref: > contracts.id]
@@ -173,8 +200,8 @@ Table imre_contract_action {
 
 // Submitted elevation points
 Table elevation_points {
-  id integer [primary key]
-  created_at timestamp [not null]
+  id integer [primary key, increment]
+  created_at timestamp [not null, default: `now()`]
   // player_id integer [ref: > players.id]
   action_id integer [ref: > actions.id]
   ep_linguistics integer
@@ -192,8 +219,8 @@ Table elevation_points {
 
 // Current elevation points
 // Table elevation_points {
-//   id integer [primary key]
-//   created_at timestamp [not null]
+//   id integer [primary key, increment]
+//   created_at timestamp [not null, default: `now()`]
 //   player_id integer [ref: > players.id]
 //   turn varchar
 //   ep_linguistics integer
@@ -214,9 +241,3 @@ Table elevation_points {
 // Ref: users.id < follows.following_user_id
 
 // Ref: users.id < follows.followed_user_id
-
-Ref: games.id < players.game_id
-
-Ref: users.id < players.user_id
-
-Ref: users.id < games.game_master

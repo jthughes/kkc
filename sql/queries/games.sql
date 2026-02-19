@@ -1,12 +1,10 @@
 -- name: CreateGame :one
-INSERT INTO games (id, created_at, game_master, name, type, type_number)
+INSERT INTO games (game_master, name, type, type_number)
 VALUES (
     $1,
     $2,
     $3,
-    $4,
-    $5,
-    $6
+    $4
 )
 RETURNING *;
 
