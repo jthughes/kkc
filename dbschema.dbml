@@ -1,0 +1,222 @@
+// Use DBML to define your database structure
+// Docs: https://dbml.dbdiagram.io/docs
+
+Table users {
+  id integer [primary key]
+  created_at timestamp [not null]
+  username varchar [not null, unique]
+
+}
+
+Table players {
+  id integer [primary key]
+  created_at timestamp [not null]
+  user_id integer [not null]
+  game_id integer [not null]
+
+  name varchar
+
+  skindancer bool [default: false]
+  class varchar
+}
+
+
+Table turns {
+  id integer [primary key]
+  created_at timestamp [not null]
+
+  game_id integer [ref: > games.id]
+
+  name varchar
+  writeup varchar
+
+  term integer
+  month integer
+
+
+}
+
+Table player_status {
+  id integer [primary key]
+  created_at timestamp [not null]
+
+  turn_id integer [ref: > turns.id]
+
+  alive bool [default: true]
+  sane bool [default: true]
+  crockery bool [default: false]
+
+  lodging bool [default: true]
+  imre bool [default: false]
+  university bool [default: true]
+
+  medica bool [default: false]
+
+  coin float [default: 0]
+
+  ep_linguistics integer [default: 0]
+  ep_arithmetics integer [default: 0]
+  ep_rhetoric_and_logic integer [default: 0]
+  ep_archives integer [default: 0]
+  ep_sympathy integer [default: 0]
+  ep_physicking integer [default: 0]
+  ep_alchemy integer [default: 0]
+  ep_artificery integer [default: 0]
+  ep_naming integer [default: 0]
+
+  // items
+  // action periods?
+}
+
+Table games {
+  id integer [primary key]
+  created_at timestamp [not null]
+  game_master integer [not null]
+  name varchar
+  type varchar
+  type_number varchar
+  // current_turn_id integer
+}
+
+
+Table actions {
+  id integer [primary key]
+  created_at timestamp [not null]
+
+  player_turn_id integer [ref: > player_turn.id]
+
+  lodging varchar
+  visit_imre bool [default: false]
+  attend_university bool [default: false]
+
+}
+
+
+Table player_turn {
+  id integer [primary key]
+  created_at timestamp [not null]
+  player_id integer [ref: > players.id]
+  turn_id integer [ref: > turns.id]
+
+  // GM managed data
+  posts integer [default: 0]
+  private_messages integer [default: 0]
+  quality_posts integer [default: 0]
+  quality_rp integer [default: 0]
+}
+
+
+Table complaints {
+  id integer [primary key]
+  created_at timestamp [not null]
+  action_id integer [ref: > actions.id]
+  // player_id integer [ref: > players.id]
+  target_id integer [ref: - players.id]
+}
+
+
+Table imre_actions {
+  id integer [primary key]
+  created_at timestamp [not null]
+  action_id integer [ref: > actions.id]
+
+  eolian_pipes bool
+  eolian_practice bool
+
+  giles_loan float
+  devi_loan float
+  // devi_collateral bool
+  // Need track collateral - separate table?
+
+  dice_bet float
+  // table for numbers bet?
+
+  nox_nahlrout integer
+  nox_couriers integer // bool with extra table?
+  nox_bloodless integer
+  nox_gram integer
+
+  black_market_mommet integer [ref: > players.id]
+  black_market_bodyguard bool
+  black_market_bodygaurd_target integer [ref: > players.id]
+  black_market_assassin bool
+  black_market_assassin_target integer [ref: > players.id]
+  black_market_contracts bool
+  // contracts
+
+}
+
+
+Table contracts {
+  id integer [primary key]
+  created_at timestamp [not null]
+
+  game_id integer [ref: > games.id]
+
+  name varchar
+  description varchar
+  requesting_player_id integer [ref: > players.id]
+  accepted_player_id integer [ref: > players.id]
+
+  bounty_coin float
+  bounty_item varchar
+}
+
+Table imre_contract_action {
+  id integer [primary key]
+  created_at timestamp [not null]
+
+  imre_action_id integer [ref: > imre_actions.id]
+  contract_id integer [ref: > contracts.id]
+}
+
+
+// Submitted elevation points
+Table elevation_points {
+  id integer [primary key]
+  created_at timestamp [not null]
+  // player_id integer [ref: > players.id]
+  action_id integer [ref: > actions.id]
+  ep_linguistics integer
+  ep_arithmetics integer
+  ep_rhetoric_and_logic integer
+  ep_archives integer
+  ep_sympathy integer
+  ep_physicking integer
+  ep_alchemy integer
+  ep_artificery integer
+  ep_naming integer
+}
+
+
+
+// Current elevation points
+// Table elevation_points {
+//   id integer [primary key]
+//   created_at timestamp [not null]
+//   player_id integer [ref: > players.id]
+//   turn varchar
+//   ep_linguistics integer
+//   ep_arithmetics integer
+//   ep_rhetoric_and_logic integer
+//   ep_archives integer
+//   ep_sympathy integer
+//   ep_physicking integer
+//   ep_alchemy integer
+//   ep_artificery integer
+//   ep_naming integer
+// }
+
+
+
+// Ref user_posts: posts.user_id > users.id // many-to-one
+
+// Ref: users.id < follows.following_user_id
+
+// Ref: users.id < follows.followed_user_id
+
+Ref: games.id < players.game_id
+
+Ref: users.id < players.user_id
+
+Ref: users.id < games.game_master
