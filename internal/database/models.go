@@ -159,6 +159,16 @@ type Game struct {
 	TypeNumber sql.NullString
 }
 
+type GameTurn struct {
+	ID        int32
+	CreatedAt time.Time
+	GameID    int32
+	Name      sql.NullString
+	Writeup   sql.NullString
+	Term      int32
+	Month     int32
+}
+
 type ImreAction struct {
 	ID                         int32
 	CreatedAt                  time.Time
@@ -193,6 +203,7 @@ type Player struct {
 	UserID     int32
 	GameID     int32
 	Name       sql.NullString
+	Alive      bool
 	Skindancer sql.NullBool
 	Class      NullClassType
 }
@@ -200,45 +211,35 @@ type Player struct {
 type PlayerStatus struct {
 	ID                 int32
 	CreatedAt          time.Time
-	TurnID             sql.NullInt32
-	Alive              sql.NullBool
-	Sane               sql.NullBool
-	Crockery           sql.NullBool
+	PlayerID           int32
+	TurnID             int32
+	Sane               bool
+	Crockery           bool
 	Lodging            sql.NullBool
 	Imre               sql.NullBool
 	University         sql.NullBool
 	Medica             sql.NullBool
-	Coin               sql.NullFloat64
-	EpLinguistics      sql.NullInt32
-	EpArithmetics      sql.NullInt32
-	EpRhetoricAndLogic sql.NullInt32
-	EpArchives         sql.NullInt32
-	EpSympathy         sql.NullInt32
-	EpPhysicking       sql.NullInt32
-	EpAlchemy          sql.NullInt32
-	EpArtificery       sql.NullInt32
-	EpNaming           sql.NullInt32
+	Coin               float64
+	EpLinguistics      int32
+	EpArithmetics      int32
+	EpRhetoricAndLogic int32
+	EpArchives         int32
+	EpSympathy         int32
+	EpPhysicking       int32
+	EpAlchemy          int32
+	EpArtificery       int32
+	EpNaming           int32
 }
 
 type PlayerTurn struct {
 	ID              int32
 	CreatedAt       time.Time
-	PlayerID        sql.NullInt32
-	TurnID          sql.NullInt32
-	Posts           sql.NullInt32
-	PrivateMessages sql.NullInt32
-	QualityPosts    sql.NullInt32
-	QualityRp       sql.NullInt32
-}
-
-type Turn struct {
-	ID        int32
-	CreatedAt time.Time
-	GameID    sql.NullInt32
-	Name      sql.NullString
-	Writeup   sql.NullString
-	Term      sql.NullInt32
-	Month     sql.NullInt32
+	PlayerID        int32
+	TurnID          int32
+	Posts           int32
+	PrivateMessages int32
+	QualityPosts    int32
+	QualityRp       int32
 }
 
 type User struct {

@@ -32,6 +32,7 @@ Table players {
 
   name varchar
 
+  alive bool [default: true, not null]
   skindancer bool [default: false]
   class class_type
 }
@@ -44,17 +45,17 @@ Enum class_type {
   edema_ruh
 }
 
-Table turns {
+Table game_turns {
   id integer [primary key, increment]
   created_at timestamp [not null, default: `now()`]
 
-  game_id integer [ref: > games.id]
+  game_id integer [ref: > games.id, not null]
 
   name varchar
   writeup varchar
 
-  term integer
-  month integer
+  term integer [not null]
+  month integer [not null]
 
 
 }
@@ -63,11 +64,12 @@ Table player_status {
   id integer [primary key, increment]
   created_at timestamp [not null, default: `now()`]
 
-  turn_id integer [ref: > turns.id]
+  player_id integer [ref: > players.id, not null]
+  turn_id integer [ref: > game_turns.id, not null]
 
-  alive bool [default: true]
-  sane bool [default: true]
-  crockery bool [default: false]
+
+  sane bool [default: true, not null]
+  crockery bool [default: false, not null]
 
   lodging bool [default: true]
   imre bool [default: false]
@@ -75,17 +77,17 @@ Table player_status {
 
   medica bool [default: false]
 
-  coin float [default: 0]
+  coin float [default: 0, not null]
 
-  ep_linguistics integer [default: 0]
-  ep_arithmetics integer [default: 0]
-  ep_rhetoric_and_logic integer [default: 0]
-  ep_archives integer [default: 0]
-  ep_sympathy integer [default: 0]
-  ep_physicking integer [default: 0]
-  ep_alchemy integer [default: 0]
-  ep_artificery integer [default: 0]
-  ep_naming integer [default: 0]
+  ep_linguistics integer [default: 0, not null]
+  ep_arithmetics integer [default: 0, not null]
+  ep_rhetoric_and_logic integer [default: 0, not null]
+  ep_archives integer [default: 0, not null]
+  ep_sympathy integer [default: 0, not null]
+  ep_physicking integer [default: 0, not null]
+  ep_alchemy integer [default: 0, not null]
+  ep_artificery integer [default: 0, not null]
+  ep_naming integer [default: 0, not null]
 
   // items
   // action periods?
@@ -110,7 +112,7 @@ Table actions {
   id integer [primary key, increment]
   created_at timestamp [not null, default: `now()`]
 
-  player_turn_id integer [ref: > player_turn.id]
+  player_turn_id integer [ref: > player_turns.id]
 
   lodging lodging_type
   visit_imre bool [default: false]
@@ -119,17 +121,17 @@ Table actions {
 }
 
 
-Table player_turn {
+Table player_turns {
   id integer [primary key, increment]
   created_at timestamp [not null, default: `now()`]
-  player_id integer [ref: > players.id]
-  turn_id integer [ref: > turns.id]
+  player_id integer [ref: > players.id, not null]
+  turn_id integer [ref: > game_turns.id, not null]
 
   // GM managed data
-  posts integer [default: 0]
-  private_messages integer [default: 0]
-  quality_posts integer [default: 0]
-  quality_rp integer [default: 0]
+  posts integer [default: 0, not null]
+  private_messages integer [default: 0, not null]
+  quality_posts integer [default: 0, not null]
+  quality_rp integer [default: 0, not null]
 }
 
 

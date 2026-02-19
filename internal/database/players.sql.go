@@ -8,6 +8,7 @@ package database
 import (
 	"context"
 	"database/sql"
+	"time"
 )
 
 const clearPlayers = `-- name: ClearPlayers :exec
@@ -26,7 +27,7 @@ VALUES (
     $2,
     $3
 )
-RETURNING id, created_at, user_id, game_id, name, skindancer, class
+RETURNING id, created_at, user_id, game_id, name, alive, skindancer, class
 `
 
 type CreatePlayerParams struct {
@@ -44,53 +45,127 @@ func (q *Queries) CreatePlayer(ctx context.Context, arg CreatePlayerParams) (Pla
 		&i.UserID,
 		&i.GameID,
 		&i.Name,
+		&i.Alive,
 		&i.Skindancer,
 		&i.Class,
 	)
 	return i, err
 }
 
-const getPlayer = `-- name: GetPlayer :one
-SELECT id, created_at, user_id, game_id, name, skindancer, class FROM players
+const getPlayerByID = `-- name: GetPlayerByID :one
+SELECT users.username, players.id, players.created_at, players.user_id, players.game_id, players.name, players.alive, players.skindancer, players.class FROM players
+INNER JOIN users ON players.user_id=users.ID
+WHERE players.id=$1 LIMIT 1
+`
+
+type GetPlayerByIDRow struct {
+	Username   string
+	ID         int32
+	CreatedAt  time.Time
+	UserID     int32
+	GameID     int32
+	Name       sql.NullString
+	Alive      bool
+	Skindancer sql.NullBool
+	Class      NullClassType
+}
+
+func (q *Queries) GetPlayerByID(ctx context.Context, id int32) (GetPlayerByIDRow, error) {
+	row := q.db.QueryRowContext(ctx, getPlayerByID, id)
+	var i GetPlayerByIDRow
+	err := row.Scan(
+		&i.Username,
+		&i.ID,
+		&i.CreatedAt,
+		&i.UserID,
+		&i.GameID,
+		&i.Name,
+		&i.Alive,
+		&i.Skindancer,
+		&i.Class,
+	)
+	return i, err
+}
+
+const getPlayerByName = `-- name: GetPlayerByName :one
+SELECT players.id, players.created_at, user_id, game_id, name, alive, skindancer, class, users.id, users.created_at, username FROM players
+INNER JOIN users ON players.user_id=users.ID
 WHERE name=$1 LIMIT 1
 `
 
-func (q *Queries) GetPlayer(ctx context.Context, name sql.NullString) (Player, error) {
-	row := q.db.QueryRowContext(ctx, getPlayer, name)
-	var i Player
+type GetPlayerByNameRow struct {
+	ID          int32
+	CreatedAt   time.Time
+	UserID      int32
+	GameID      int32
+	Name        sql.NullString
+	Alive       bool
+	Skindancer  sql.NullBool
+	Class       NullClassType
+	ID_2        int32
+	CreatedAt_2 time.Time
+	Username    string
+}
+
+func (q *Queries) GetPlayerByName(ctx context.Context, name sql.NullString) (GetPlayerByNameRow, error) {
+	row := q.db.QueryRowContext(ctx, getPlayerByName, name)
+	var i GetPlayerByNameRow
 	err := row.Scan(
 		&i.ID,
 		&i.CreatedAt,
 		&i.UserID,
 		&i.GameID,
 		&i.Name,
+		&i.Alive,
 		&i.Skindancer,
 		&i.Class,
+		&i.ID_2,
+		&i.CreatedAt_2,
+		&i.Username,
 	)
 	return i, err
 }
 
 const getPlayers = `-- name: GetPlayers :many
-SELECT id, created_at, user_id, game_id, name, skindancer, class FROM players
+SELECT players.id, players.created_at, user_id, game_id, name, alive, skindancer, class, users.id, users.created_at, username FROM players INNER JOIN users ON players.user_id=users.ID
+WHERE game_id = $1
 `
 
-func (q *Queries) GetPlayers(ctx context.Context) ([]Player, error) {
-	rows, err := q.db.QueryContext(ctx, getPlayers)
+type GetPlayersRow struct {
+	ID          int32
+	CreatedAt   time.Time
+	UserID      int32
+	GameID      int32
+	Name        sql.NullString
+	Alive       bool
+	Skindancer  sql.NullBool
+	Class       NullClassType
+	ID_2        int32
+	CreatedAt_2 time.Time
+	Username    string
+}
+
+func (q *Queries) GetPlayers(ctx context.Context, gameID int32) ([]GetPlayersRow, error) {
+	rows, err := q.db.QueryContext(ctx, getPlayers, gameID)
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
-	var items []Player
+	var items []GetPlayersRow
 	for rows.Next() {
-		var i Player
+		var i GetPlayersRow
 		if err := rows.Scan(
 			&i.ID,
 			&i.CreatedAt,
 			&i.UserID,
 			&i.GameID,
 			&i.Name,
+			&i.Alive,
 			&i.Skindancer,
 			&i.Class,
+			&i.ID_2,
+			&i.CreatedAt_2,
+			&i.Username,
 		); err != nil {
 			return nil, err
 		}
