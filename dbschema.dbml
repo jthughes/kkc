@@ -93,6 +93,20 @@ Table player_status {
   // action periods?
 }
 
+Table player_turns {
+  id integer [primary key, increment]
+  created_at timestamp [not null, default: `now()`]
+  player_id integer [ref: > players.id, not null]
+  turn_id integer [ref: > game_turns.id, not null]
+
+  // GM managed data
+  posts integer [default: 0, not null]
+  private_messages integer [default: 0, not null]
+  quality_posts integer [default: 0, not null]
+  quality_rp integer [default: 0, not null]
+}
+
+
 Enum lodging_type {
   streets
   underthing
@@ -112,42 +126,46 @@ Table actions {
   id integer [primary key, increment]
   created_at timestamp [not null, default: `now()`]
 
-  player_turn_id integer [ref: > player_turns.id]
+  player_turn_id integer [ref: - player_turns.id, not null]
 
-  lodging lodging_type
-  visit_imre bool [default: false]
-  attend_university bool [default: false]
+  lodging lodging_type [default: lodging_type.streets, not null]
+  visit_imre bool [default: false, not null]
+  attend_university bool [default: false, not null]
 
-}
-
-
-Table player_turns {
-  id integer [primary key, increment]
-  created_at timestamp [not null, default: `now()`]
-  player_id integer [ref: > players.id, not null]
-  turn_id integer [ref: > game_turns.id, not null]
-
-  // GM managed data
-  posts integer [default: 0, not null]
-  private_messages integer [default: 0, not null]
-  quality_posts integer [default: 0, not null]
-  quality_rp integer [default: 0, not null]
 }
 
 
 Table complaints {
   id integer [primary key, increment]
   created_at timestamp [not null, default: `now()`]
-  action_id integer [ref: > actions.id]
+  action_id integer [ref: - actions.id, not null]
   // player_id integer [ref: > players.id]
-  target_id integer [ref: - players.id]
+  target_id integer [ref: > players.id]
 }
+
+// Submitted elevation points
+Table elevation_points {
+  id integer [primary key, increment]
+  created_at timestamp [not null, default: `now()`]
+  // player_id integer [ref: > players.id]
+  action_id integer [ref: - actions.id, not null]
+  ep_linguistics integer [default: 0, not null]
+  ep_arithmetics integer [default: 0, not null]
+  ep_rhetoric_and_logic integer [default: 0, not null]
+  ep_archives integer [default: 0, not null]
+  ep_sympathy integer [default: 0, not null]
+  ep_physicking integer [default: 0, not null]
+  ep_alchemy integer [default: 0, not null]
+  ep_artificery integer [default: 0, not null]
+  ep_naming integer [default: 0, not null]
+}
+
 
 
 Table imre_actions {
   id integer [primary key, increment]
   created_at timestamp [not null, default: `now()`]
-  action_id integer [ref: > actions.id]
+  action_id integer [ref: - actions.id, not null]
 
   eolian_pipes bool
   eolian_practice bool
@@ -180,7 +198,7 @@ Table contracts {
   id integer [primary key, increment]
   created_at timestamp [not null, default: `now()`]
 
-  game_id integer [ref: > games.id]
+  game_id integer [ref: > games.id, not null]
 
   name varchar
   description varchar
@@ -195,27 +213,11 @@ Table imre_contract_action {
   id integer [primary key, increment]
   created_at timestamp [not null, default: `now()`]
 
-  imre_action_id integer [ref: > imre_actions.id]
-  contract_id integer [ref: > contracts.id]
+  imre_action_id integer [ref: > imre_actions.id, not null]
+  contract_id integer [ref: - contracts.id]
 }
 
 
-// Submitted elevation points
-Table elevation_points {
-  id integer [primary key, increment]
-  created_at timestamp [not null, default: `now()`]
-  // player_id integer [ref: > players.id]
-  action_id integer [ref: > actions.id]
-  ep_linguistics integer
-  ep_arithmetics integer
-  ep_rhetoric_and_logic integer
-  ep_archives integer
-  ep_sympathy integer
-  ep_physicking integer
-  ep_alchemy integer
-  ep_artificery integer
-  ep_naming integer
-}
 
 
 
@@ -225,15 +227,15 @@ Table elevation_points {
 //   created_at timestamp [not null, default: `now()`]
 //   player_id integer [ref: > players.id]
 //   turn varchar
-//   ep_linguistics integer
-//   ep_arithmetics integer
-//   ep_rhetoric_and_logic integer
-//   ep_archives integer
-//   ep_sympathy integer
-//   ep_physicking integer
-//   ep_alchemy integer
-//   ep_artificery integer
-//   ep_naming integer
+//   ep_linguistics integer [default: 0, not null]
+//   ep_arithmetics integer [default: 0, not null]
+//   ep_rhetoric_and_logic integer [default: 0, not null]
+//   ep_archives integer [default: 0, not null]
+//   ep_sympathy integer [default: 0, not null]
+//   ep_physicking integer [default: 0, not null]
+//   ep_alchemy integer [default: 0, not null]
+//   ep_artificery integer [default: 0, not null]
+//   ep_naming integer [default: 0, not null]
 // }
 
 
