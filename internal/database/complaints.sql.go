@@ -36,13 +36,13 @@ func (q *Queries) CreatePlayerComplaint(ctx context.Context, arg CreatePlayerCom
 	return i, err
 }
 
-const deletPlayerComplaint = `-- name: DeletPlayerComplaint :exec
+const deletePlayerComplaint = `-- name: DeletePlayerComplaint :exec
 DELETE FROM elevation_points
 WHERE id=$1
 `
 
-func (q *Queries) DeletPlayerComplaint(ctx context.Context, id int32) error {
-	_, err := q.db.ExecContext(ctx, deletPlayerComplaint, id)
+func (q *Queries) DeletePlayerComplaint(ctx context.Context, id int32) error {
+	_, err := q.db.ExecContext(ctx, deletePlayerComplaint, id)
 	return err
 }
 

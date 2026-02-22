@@ -11,6 +11,11 @@ import (
 )
 
 func nullString(str string) sql.NullString {
+	if str == "" {
+		return sql.NullString{
+			Valid: false,
+		}
+	}
 	return sql.NullString{
 		String: str,
 		Valid:  true,
@@ -34,7 +39,10 @@ func main() {
 		db: database.New(db),
 	}
 
-	gm, _ := cfg.db.CreateUser(context.Background(), "Sapphire Elephant")
+	gm, err := cfg.db.CreateUser(context.Background(), "Sapphire Elephant")
+	if err != nil {
+		fmt.Errorf("unable to create new user", err)
+	}
 	user1, err := cfg.db.CreateUser(context.Background(), "Indigo Weasel")
 	if err != nil {
 		fmt.Printf("database error: %v", err)
@@ -51,33 +59,14 @@ func main() {
 		os.Exit(1)
 	}
 
-	game, _ := cfg.db.CreateGame(context.Background(), database.CreateGameParams{
-		GameMaster: gm.ID,
-		Name:       nullString("Blood on the wind"),
-		Type:       nullString("Long Game"),
-		TypeNumber: nullString("1"),
-	})
+	game, err := cfg.newGame(gm, "Blood on the wind", "Long Game", "1")
 
-	player1, _ := cfg.db.CreatePlayer(context.Background(), database.CreatePlayerParams{
-		GameID: game.ID,
-		UserID: user1.ID,
-		Name:   nullString("Kvothe"),
-	})
-
-	player2, _ := cfg.db.CreatePlayer(context.Background(), database.CreatePlayerParams{
-		GameID: game.ID,
-		UserID: user2.ID,
-		Name:   nullString("Denna"),
-	})
-
-	player3, _ := cfg.db.CreatePlayer(context.Background(), database.CreatePlayerParams{
-		GameID: game.ID,
-		UserID: user3.ID,
-		Name:   nullString("Auri"),
-	})
+	player1, err := cfg.registerPlayer(game, user1, "Kvothe")
+	player2, err := cfg.registerPlayer(game, user2, "Denna")
+	player3, err := cfg.registerPlayer(game, user3, "Auri")
 
 	var players = make(map[int32]database.Player)
-	players[player1.UserID] = player1
+	players[user1.ID] = player1
 	players[player2.UserID] = player2
 	players[player3.UserID] = player3
 
@@ -96,7 +85,7 @@ func main() {
 		fmt.Printf("%d: %s (%s)\n", user.ID, user.Username, player_name)
 	}
 
-	turn, err := cfg.newTurn(game.ID, 1, 1)
+	turn, err := cfg.newTurn(game, 1, 1)
 
 	status, err := cfg.db.GetPlayerStatusByID(context.Background(), database.GetPlayerStatusByIDParams{
 		PlayerID: player2.ID,
@@ -105,44 +94,4 @@ func main() {
 
 	player, err := cfg.db.GetPlayerByID(context.Background(), status.PlayerID)
 	fmt.Printf("%s has %d EP in Physicking\n", player.Username, status.EpPhysicking)
-}
-
-func (cfg config) newTurn(game_id int32, term, month int32) (database.GameTurn, error) {
-	turn, err := cfg.db.NewGameTurn(context.Background(), database.NewGameTurnParams{
-		GameID: game_id,
-		Term:   term,
-		Month:  month,
-	})
-
-	players, err := cfg.db.GetPlayers(context.Background(), game_id)
-
-	for _, player := range players {
-		if player.Alive == false {
-			continue
-		}
-		cfg.db.NewPlayerTurn(context.Background(), database.NewPlayerTurnParams{
-			PlayerID: player.ID,
-			TurnID:   turn.ID,
-		})
-
-		// Should be calculated based on previous turns status and actions, or something.
-		// Need to work out how turn processing actually works.
-		cfg.db.NewPlayerStatus(context.Background(), database.NewPlayerStatusParams{
-			PlayerID:           player.ID,
-			TurnID:             turn.ID,
-			Sane:               true,
-			Crockery:           false,
-			Coin:               0,
-			EpLinguistics:      0,
-			EpArithmetics:      0,
-			EpRhetoricAndLogic: 0,
-			EpArchives:         0,
-			EpSympathy:         0,
-			EpPhysicking:       0,
-			EpAlchemy:          0,
-			EpArtificery:       0,
-			EpNaming:           0,
-		})
-	}
-	return turn, err
 }

@@ -11,7 +11,7 @@ import (
 )
 
 const getGameTurns = `-- name: GetGameTurns :many
-SELECT id, created_at, game_id, name, writeup, term, month FROM game_turns
+SELECT id, created_at, game_id, name, writeup, term, month, active FROM game_turns
 WHERE game_id = $1
 `
 
@@ -32,6 +32,7 @@ func (q *Queries) GetGameTurns(ctx context.Context, gameID int32) ([]GameTurn, e
 			&i.Writeup,
 			&i.Term,
 			&i.Month,
+			&i.Active,
 		); err != nil {
 			return nil, err
 		}
@@ -54,7 +55,7 @@ VALUES (
     $3,
     $4
 )
-RETURNING id, created_at, game_id, name, writeup, term, month
+RETURNING id, created_at, game_id, name, writeup, term, month, active
 `
 
 type NewGameTurnParams struct {
@@ -80,6 +81,7 @@ func (q *Queries) NewGameTurn(ctx context.Context, arg NewGameTurnParams) (GameT
 		&i.Writeup,
 		&i.Term,
 		&i.Month,
+		&i.Active,
 	)
 	return i, err
 }

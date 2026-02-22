@@ -38,11 +38,11 @@ Table players {
 }
 
 Enum class_type {
-  vintish_nobleman
-  aturan_nobleman
-  yllish_commoner
-  cealdish_commoner
   edema_ruh
+  cealdish_commoner
+  yllish_commoner
+  aturan_nobleman
+  vintish_nobleman
 }
 
 Table game_turns {
@@ -57,6 +57,7 @@ Table game_turns {
   term integer [not null]
   month integer [not null]
 
+  active bool [default: false, not null]
 
 }
 
@@ -119,6 +120,15 @@ Enum lodging_type {
   horse_and_four
   pearl_of_imre
   spindle_and_draft
+}
+
+Enum starting_lodging_type {
+    ankers
+    kings_drab
+    golden_pony
+    windy_tower
+    horse_and_four
+    spindle_and_draft
 }
 
 

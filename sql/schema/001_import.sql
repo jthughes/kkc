@@ -1,14 +1,14 @@
 -- +goose up
 -- SQL dump generated using DBML (dbml.dbdiagram.io)
 -- Database: PostgreSQL
--- Generated at: 2026-02-21T05:53:41.088Z
+-- Generated at: 2026-02-22T12:02:45.927Z
 
 CREATE TYPE "class_type" AS ENUM (
-  'vintish_nobleman',
-  'aturan_nobleman',
-  'yllish_commoner',
+  'edema_ruh',
   'cealdish_commoner',
-  'edema_ruh'
+  'yllish_commoner',
+  'aturan_nobleman',
+  'vintish_nobleman'
 );
 
 CREATE TYPE "lodging_type" AS ENUM (
@@ -22,6 +22,15 @@ CREATE TYPE "lodging_type" AS ENUM (
   'windy_tower',
   'horse_and_four',
   'pearl_of_imre',
+  'spindle_and_draft'
+);
+
+CREATE TYPE "starting_lodging_type" AS ENUM (
+  'ankers',
+  'kings_drab',
+  'golden_pony',
+  'windy_tower',
+  'horse_and_four',
   'spindle_and_draft'
 );
 
@@ -58,7 +67,8 @@ CREATE TABLE "game_turns" (
   "name" varchar,
   "writeup" varchar,
   "term" integer NOT NULL,
-  "month" integer NOT NULL
+  "month" integer NOT NULL,
+  "active" bool NOT NULL DEFAULT false
 );
 
 CREATE TABLE "player_status" (

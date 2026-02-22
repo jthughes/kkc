@@ -14,11 +14,11 @@ import (
 type ClassType string
 
 const (
-	ClassTypeVintishNobleman  ClassType = "vintish_nobleman"
-	ClassTypeAturanNobleman   ClassType = "aturan_nobleman"
-	ClassTypeYllishCommoner   ClassType = "yllish_commoner"
-	ClassTypeCealdishCommoner ClassType = "cealdish_commoner"
 	ClassTypeEdemaRuh         ClassType = "edema_ruh"
+	ClassTypeCealdishCommoner ClassType = "cealdish_commoner"
+	ClassTypeYllishCommoner   ClassType = "yllish_commoner"
+	ClassTypeAturanNobleman   ClassType = "aturan_nobleman"
+	ClassTypeVintishNobleman  ClassType = "vintish_nobleman"
 )
 
 func (e *ClassType) Scan(src interface{}) error {
@@ -54,6 +54,16 @@ func (ns NullClassType) Value() (driver.Value, error) {
 		return nil, nil
 	}
 	return string(ns.ClassType), nil
+}
+
+func AllClassTypeValues() []ClassType {
+	return []ClassType{
+		ClassTypeEdemaRuh,
+		ClassTypeCealdishCommoner,
+		ClassTypeYllishCommoner,
+		ClassTypeAturanNobleman,
+		ClassTypeVintishNobleman,
+	}
 }
 
 type LodgingType string
@@ -105,6 +115,79 @@ func (ns NullLodgingType) Value() (driver.Value, error) {
 		return nil, nil
 	}
 	return string(ns.LodgingType), nil
+}
+
+func AllLodgingTypeValues() []LodgingType {
+	return []LodgingType{
+		LodgingTypeStreets,
+		LodgingTypeUnderthing,
+		LodgingTypeMews,
+		LodgingTypeAnkers,
+		LodgingTypeKingsDrab,
+		LodgingTypeGreyMan,
+		LodgingTypeGoldenPony,
+		LodgingTypeWindyTower,
+		LodgingTypeHorseAndFour,
+		LodgingTypePearlOfImre,
+		LodgingTypeSpindleAndDraft,
+	}
+}
+
+type StartingLodgingType string
+
+const (
+	StartingLodgingTypeAnkers          StartingLodgingType = "ankers"
+	StartingLodgingTypeKingsDrab       StartingLodgingType = "kings_drab"
+	StartingLodgingTypeGoldenPony      StartingLodgingType = "golden_pony"
+	StartingLodgingTypeWindyTower      StartingLodgingType = "windy_tower"
+	StartingLodgingTypeHorseAndFour    StartingLodgingType = "horse_and_four"
+	StartingLodgingTypeSpindleAndDraft StartingLodgingType = "spindle_and_draft"
+)
+
+func (e *StartingLodgingType) Scan(src interface{}) error {
+	switch s := src.(type) {
+	case []byte:
+		*e = StartingLodgingType(s)
+	case string:
+		*e = StartingLodgingType(s)
+	default:
+		return fmt.Errorf("unsupported scan type for StartingLodgingType: %T", src)
+	}
+	return nil
+}
+
+type NullStartingLodgingType struct {
+	StartingLodgingType StartingLodgingType
+	Valid               bool // Valid is true if StartingLodgingType is not NULL
+}
+
+// Scan implements the Scanner interface.
+func (ns *NullStartingLodgingType) Scan(value interface{}) error {
+	if value == nil {
+		ns.StartingLodgingType, ns.Valid = "", false
+		return nil
+	}
+	ns.Valid = true
+	return ns.StartingLodgingType.Scan(value)
+}
+
+// Value implements the driver Valuer interface.
+func (ns NullStartingLodgingType) Value() (driver.Value, error) {
+	if !ns.Valid {
+		return nil, nil
+	}
+	return string(ns.StartingLodgingType), nil
+}
+
+func AllStartingLodgingTypeValues() []StartingLodgingType {
+	return []StartingLodgingType{
+		StartingLodgingTypeAnkers,
+		StartingLodgingTypeKingsDrab,
+		StartingLodgingTypeGoldenPony,
+		StartingLodgingTypeWindyTower,
+		StartingLodgingTypeHorseAndFour,
+		StartingLodgingTypeSpindleAndDraft,
+	}
 }
 
 type Action struct {
@@ -167,6 +250,7 @@ type GameTurn struct {
 	Writeup   sql.NullString
 	Term      int32
 	Month     int32
+	Active    bool
 }
 
 type ImreAction struct {
