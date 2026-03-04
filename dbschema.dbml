@@ -33,7 +33,7 @@ Table players {
   name varchar
 
   alive bool [default: true, not null]
-  skindancer bool [default: false]
+  skindancer bool [default: false, not null]
   class class_type
 }
 
@@ -80,15 +80,15 @@ Table player_status {
 
   coin float [default: 0, not null]
 
-  ep_linguistics integer [default: 0, not null]
-  ep_arithmetics integer [default: 0, not null]
-  ep_rhetoric_and_logic integer [default: 0, not null]
-  ep_archives integer [default: 0, not null]
-  ep_sympathy integer [default: 0, not null]
-  ep_physicking integer [default: 0, not null]
   ep_alchemy integer [default: 0, not null]
+  ep_archives integer [default: 0, not null]
+  ep_arithmetics integer [default: 0, not null]
   ep_artificery integer [default: 0, not null]
+  ep_linguistics integer [default: 0, not null]
   ep_naming integer [default: 0, not null]
+  ep_physicking integer [default: 0, not null]
+  ep_rhetoric_and_logic integer [default: 0, not null]
+  ep_sympathy integer [default: 0, not null]
 
   // items
   // action periods?
@@ -133,15 +133,11 @@ Enum starting_lodging_type {
 
 
 Table actions {
-  id integer [primary key, increment]
-  created_at timestamp [not null, default: `now()`]
-
-  player_turn_id integer [ref: - player_turns.id, not null]
+  id integer [primary key, ref: - player_turns.id, not null]
 
   lodging lodging_type [default: lodging_type.streets, not null]
   visit_imre bool [default: false, not null]
   attend_university bool [default: false, not null]
-
 }
 
 
@@ -153,21 +149,33 @@ Table complaints {
   target_id integer [ref: > players.id]
 }
 
+Enum fields {
+    alchemy
+    archives
+    arithmetics
+    artificery
+    linguisitics
+    naming
+    physicking
+    rhetoric_and_logic
+    sympathy
+}
+
 // Submitted elevation points
 Table elevation_points {
-  id integer [primary key, increment]
-  created_at timestamp [not null, default: `now()`]
+  // id integer [primary key, increment]
+  // created_at timestamp [not null, default: `now()`]
   // player_id integer [ref: > players.id]
-  action_id integer [ref: - actions.id, not null]
-  ep_linguistics integer [default: 0, not null]
-  ep_arithmetics integer [default: 0, not null]
-  ep_rhetoric_and_logic integer [default: 0, not null]
-  ep_archives integer [default: 0, not null]
-  ep_sympathy integer [default: 0, not null]
-  ep_physicking integer [default: 0, not null]
+  action_id integer [primary key, ref: - actions.id, not null]
   ep_alchemy integer [default: 0, not null]
+  ep_archives integer [default: 0, not null]
+  ep_arithmetics integer [default: 0, not null]
   ep_artificery integer [default: 0, not null]
+  ep_linguistics integer [default: 0, not null]
   ep_naming integer [default: 0, not null]
+  ep_physicking integer [default: 0, not null]
+  ep_rhetoric_and_logic integer [default: 0, not null]
+  ep_sympathy integer [default: 0, not null]
 }
 
 

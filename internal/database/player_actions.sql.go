@@ -10,20 +10,18 @@ import (
 )
 
 const createPlayerAction = `-- name: CreatePlayerAction :one
-INSERT INTO actions (player_turn_id)
+INSERT INTO actions (id)
 VALUES (
     $1
 )
-RETURNING id, created_at, player_turn_id, lodging, visit_imre, attend_university
+RETURNING id, lodging, visit_imre, attend_university
 `
 
-func (q *Queries) CreatePlayerAction(ctx context.Context, playerTurnID int32) (Action, error) {
-	row := q.db.QueryRowContext(ctx, createPlayerAction, playerTurnID)
+func (q *Queries) CreatePlayerAction(ctx context.Context, id int32) (Action, error) {
+	row := q.db.QueryRowContext(ctx, createPlayerAction, id)
 	var i Action
 	err := row.Scan(
 		&i.ID,
-		&i.CreatedAt,
-		&i.PlayerTurnID,
 		&i.Lodging,
 		&i.VisitImre,
 		&i.AttendUniversity,
@@ -32,17 +30,15 @@ func (q *Queries) CreatePlayerAction(ctx context.Context, playerTurnID int32) (A
 }
 
 const getPlayerActionByPlayerTurnID = `-- name: GetPlayerActionByPlayerTurnID :one
-SELECT id, created_at, player_turn_id, lodging, visit_imre, attend_university FROM actions
-WHERE player_turn_id=$1 LIMIT 1
+SELECT id, lodging, visit_imre, attend_university FROM actions
+WHERE id=$1 LIMIT 1
 `
 
-func (q *Queries) GetPlayerActionByPlayerTurnID(ctx context.Context, playerTurnID int32) (Action, error) {
-	row := q.db.QueryRowContext(ctx, getPlayerActionByPlayerTurnID, playerTurnID)
+func (q *Queries) GetPlayerActionByPlayerTurnID(ctx context.Context, id int32) (Action, error) {
+	row := q.db.QueryRowContext(ctx, getPlayerActionByPlayerTurnID, id)
 	var i Action
 	err := row.Scan(
 		&i.ID,
-		&i.CreatedAt,
-		&i.PlayerTurnID,
 		&i.Lodging,
 		&i.VisitImre,
 		&i.AttendUniversity,
@@ -56,12 +52,12 @@ UPDATE actions SET (lodging, visit_imre, attend_university)
     $2,
     $3,
     $4
-) WHERE player_turn_id=$1
-RETURNING id, created_at, player_turn_id, lodging, visit_imre, attend_university
+) WHERE id=$1
+RETURNING id, lodging, visit_imre, attend_university
 `
 
 type UpdatePlayerActionParams struct {
-	PlayerTurnID     int32
+	ID               int32
 	Lodging          LodgingType
 	VisitImre        bool
 	AttendUniversity bool
@@ -69,7 +65,7 @@ type UpdatePlayerActionParams struct {
 
 func (q *Queries) UpdatePlayerAction(ctx context.Context, arg UpdatePlayerActionParams) (Action, error) {
 	row := q.db.QueryRowContext(ctx, updatePlayerAction,
-		arg.PlayerTurnID,
+		arg.ID,
 		arg.Lodging,
 		arg.VisitImre,
 		arg.AttendUniversity,
@@ -77,8 +73,6 @@ func (q *Queries) UpdatePlayerAction(ctx context.Context, arg UpdatePlayerAction
 	var i Action
 	err := row.Scan(
 		&i.ID,
-		&i.CreatedAt,
-		&i.PlayerTurnID,
 		&i.Lodging,
 		&i.VisitImre,
 		&i.AttendUniversity,

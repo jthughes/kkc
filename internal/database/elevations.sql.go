@@ -14,31 +14,29 @@ INSERT INTO elevation_points (action_id)
 VALUES (
     $1
 )
-RETURNING id, created_at, action_id, ep_linguistics, ep_arithmetics, ep_rhetoric_and_logic, ep_archives, ep_sympathy, ep_physicking, ep_alchemy, ep_artificery, ep_naming
+RETURNING action_id, ep_alchemy, ep_archives, ep_arithmetics, ep_artificery, ep_linguistics, ep_naming, ep_physicking, ep_rhetoric_and_logic, ep_sympathy
 `
 
 func (q *Queries) CreatePlayerEPSubmission(ctx context.Context, actionID int32) (ElevationPoint, error) {
 	row := q.db.QueryRowContext(ctx, createPlayerEPSubmission, actionID)
 	var i ElevationPoint
 	err := row.Scan(
-		&i.ID,
-		&i.CreatedAt,
 		&i.ActionID,
-		&i.EpLinguistics,
-		&i.EpArithmetics,
-		&i.EpRhetoricAndLogic,
-		&i.EpArchives,
-		&i.EpSympathy,
-		&i.EpPhysicking,
 		&i.EpAlchemy,
+		&i.EpArchives,
+		&i.EpArithmetics,
 		&i.EpArtificery,
+		&i.EpLinguistics,
 		&i.EpNaming,
+		&i.EpPhysicking,
+		&i.EpRhetoricAndLogic,
+		&i.EpSympathy,
 	)
 	return i, err
 }
 
 const getPlayerEPByPlayerActionID = `-- name: GetPlayerEPByPlayerActionID :one
-SELECT id, created_at, action_id, ep_linguistics, ep_arithmetics, ep_rhetoric_and_logic, ep_archives, ep_sympathy, ep_physicking, ep_alchemy, ep_artificery, ep_naming FROM elevation_points
+SELECT action_id, ep_alchemy, ep_archives, ep_arithmetics, ep_artificery, ep_linguistics, ep_naming, ep_physicking, ep_rhetoric_and_logic, ep_sympathy FROM elevation_points
 WHERE action_id=$1 LIMIT 1
 `
 
@@ -46,24 +44,22 @@ func (q *Queries) GetPlayerEPByPlayerActionID(ctx context.Context, actionID int3
 	row := q.db.QueryRowContext(ctx, getPlayerEPByPlayerActionID, actionID)
 	var i ElevationPoint
 	err := row.Scan(
-		&i.ID,
-		&i.CreatedAt,
 		&i.ActionID,
-		&i.EpLinguistics,
-		&i.EpArithmetics,
-		&i.EpRhetoricAndLogic,
-		&i.EpArchives,
-		&i.EpSympathy,
-		&i.EpPhysicking,
 		&i.EpAlchemy,
+		&i.EpArchives,
+		&i.EpArithmetics,
 		&i.EpArtificery,
+		&i.EpLinguistics,
 		&i.EpNaming,
+		&i.EpPhysicking,
+		&i.EpRhetoricAndLogic,
+		&i.EpSympathy,
 	)
 	return i, err
 }
 
-const updatePlayerEPSubmission = `-- name: UpdatePlayerEPSubmission :one
-UPDATE elevation_points SET (ep_linguistics, ep_arithmetics, ep_rhetoric_and_logic, ep_archives, ep_sympathy, ep_physicking, ep_alchemy, ep_artificery, ep_naming)
+const updatePlayerEPSubmission = `-- name: UpdatePlayerEPSubmission :exec
+UPDATE elevation_points SET (ep_alchemy, ep_archives, ep_arithmetics, ep_artificery, ep_linguistics, ep_naming, ep_physicking, ep_rhetoric_and_logic, ep_sympathy)
 = (
     $2,
     $3,
@@ -75,49 +71,33 @@ UPDATE elevation_points SET (ep_linguistics, ep_arithmetics, ep_rhetoric_and_log
     $9,
     $10
 ) WHERE action_id=$1
-RETURNING id, created_at, action_id, ep_linguistics, ep_arithmetics, ep_rhetoric_and_logic, ep_archives, ep_sympathy, ep_physicking, ep_alchemy, ep_artificery, ep_naming
 `
 
 type UpdatePlayerEPSubmissionParams struct {
 	ActionID           int32
-	EpLinguistics      int32
-	EpArithmetics      int32
-	EpRhetoricAndLogic int32
-	EpArchives         int32
-	EpSympathy         int32
-	EpPhysicking       int32
 	EpAlchemy          int32
+	EpArchives         int32
+	EpArithmetics      int32
 	EpArtificery       int32
+	EpLinguistics      int32
 	EpNaming           int32
+	EpPhysicking       int32
+	EpRhetoricAndLogic int32
+	EpSympathy         int32
 }
 
-func (q *Queries) UpdatePlayerEPSubmission(ctx context.Context, arg UpdatePlayerEPSubmissionParams) (ElevationPoint, error) {
-	row := q.db.QueryRowContext(ctx, updatePlayerEPSubmission,
+func (q *Queries) UpdatePlayerEPSubmission(ctx context.Context, arg UpdatePlayerEPSubmissionParams) error {
+	_, err := q.db.ExecContext(ctx, updatePlayerEPSubmission,
 		arg.ActionID,
-		arg.EpLinguistics,
-		arg.EpArithmetics,
-		arg.EpRhetoricAndLogic,
-		arg.EpArchives,
-		arg.EpSympathy,
-		arg.EpPhysicking,
 		arg.EpAlchemy,
+		arg.EpArchives,
+		arg.EpArithmetics,
 		arg.EpArtificery,
+		arg.EpLinguistics,
 		arg.EpNaming,
+		arg.EpPhysicking,
+		arg.EpRhetoricAndLogic,
+		arg.EpSympathy,
 	)
-	var i ElevationPoint
-	err := row.Scan(
-		&i.ID,
-		&i.CreatedAt,
-		&i.ActionID,
-		&i.EpLinguistics,
-		&i.EpArithmetics,
-		&i.EpRhetoricAndLogic,
-		&i.EpArchives,
-		&i.EpSympathy,
-		&i.EpPhysicking,
-		&i.EpAlchemy,
-		&i.EpArtificery,
-		&i.EpNaming,
-	)
-	return i, err
+	return err
 }

@@ -66,6 +66,69 @@ func AllClassTypeValues() []ClassType {
 	}
 }
 
+type Fields string
+
+const (
+	FieldsAlchemy          Fields = "alchemy"
+	FieldsArchives         Fields = "archives"
+	FieldsArithmetics      Fields = "arithmetics"
+	FieldsArtificery       Fields = "artificery"
+	FieldsLinguisitics     Fields = "linguisitics"
+	FieldsNaming           Fields = "naming"
+	FieldsPhysicking       Fields = "physicking"
+	FieldsRhetoricAndLogic Fields = "rhetoric_and_logic"
+	FieldsSympathy         Fields = "sympathy"
+)
+
+func (e *Fields) Scan(src interface{}) error {
+	switch s := src.(type) {
+	case []byte:
+		*e = Fields(s)
+	case string:
+		*e = Fields(s)
+	default:
+		return fmt.Errorf("unsupported scan type for Fields: %T", src)
+	}
+	return nil
+}
+
+type NullFields struct {
+	Fields Fields
+	Valid  bool // Valid is true if Fields is not NULL
+}
+
+// Scan implements the Scanner interface.
+func (ns *NullFields) Scan(value interface{}) error {
+	if value == nil {
+		ns.Fields, ns.Valid = "", false
+		return nil
+	}
+	ns.Valid = true
+	return ns.Fields.Scan(value)
+}
+
+// Value implements the driver Valuer interface.
+func (ns NullFields) Value() (driver.Value, error) {
+	if !ns.Valid {
+		return nil, nil
+	}
+	return string(ns.Fields), nil
+}
+
+func AllFieldsValues() []Fields {
+	return []Fields{
+		FieldsAlchemy,
+		FieldsArchives,
+		FieldsArithmetics,
+		FieldsArtificery,
+		FieldsLinguisitics,
+		FieldsNaming,
+		FieldsPhysicking,
+		FieldsRhetoricAndLogic,
+		FieldsSympathy,
+	}
+}
+
 type LodgingType string
 
 const (
@@ -192,8 +255,6 @@ func AllStartingLodgingTypeValues() []StartingLodgingType {
 
 type Action struct {
 	ID               int32
-	CreatedAt        time.Time
-	PlayerTurnID     int32
 	Lodging          LodgingType
 	VisitImre        bool
 	AttendUniversity bool
@@ -219,18 +280,16 @@ type Contract struct {
 }
 
 type ElevationPoint struct {
-	ID                 int32
-	CreatedAt          time.Time
 	ActionID           int32
-	EpLinguistics      int32
-	EpArithmetics      int32
-	EpRhetoricAndLogic int32
-	EpArchives         int32
-	EpSympathy         int32
-	EpPhysicking       int32
 	EpAlchemy          int32
+	EpArchives         int32
+	EpArithmetics      int32
 	EpArtificery       int32
+	EpLinguistics      int32
 	EpNaming           int32
+	EpPhysicking       int32
+	EpRhetoricAndLogic int32
+	EpSympathy         int32
 }
 
 type Game struct {
@@ -288,7 +347,7 @@ type Player struct {
 	GameID     int32
 	Name       sql.NullString
 	Alive      bool
-	Skindancer sql.NullBool
+	Skindancer bool
 	Class      NullClassType
 }
 
@@ -304,15 +363,15 @@ type PlayerStatus struct {
 	University         sql.NullBool
 	Medica             sql.NullBool
 	Coin               float64
-	EpLinguistics      int32
-	EpArithmetics      int32
-	EpRhetoricAndLogic int32
-	EpArchives         int32
-	EpSympathy         int32
-	EpPhysicking       int32
 	EpAlchemy          int32
+	EpArchives         int32
+	EpArithmetics      int32
 	EpArtificery       int32
+	EpLinguistics      int32
 	EpNaming           int32
+	EpPhysicking       int32
+	EpRhetoricAndLogic int32
+	EpSympathy         int32
 }
 
 type PlayerTurn struct {

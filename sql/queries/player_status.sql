@@ -1,5 +1,5 @@
 -- name: NewPlayerStatus :one
-INSERT INTO player_status (player_id, turn_id, sane, crockery, lodging, imre, university, medica, coin, ep_linguistics, ep_arithmetics, ep_rhetoric_and_logic, ep_archives, ep_sympathy, ep_physicking, ep_alchemy, ep_artificery, ep_naming)
+INSERT INTO player_status (player_id, turn_id, sane, crockery, lodging, imre, university, medica, coin, ep_alchemy, ep_archives, ep_arithmetics, ep_artificery, ep_linguistics, ep_naming, ep_physicking, ep_rhetoric_and_logic, ep_sympathy)
 VALUES (
     $1,
     $2,
@@ -28,3 +28,9 @@ SELECT * FROM player_status;
 -- name: GetPlayerStatusByID :one
 SELECT * FROM player_status
 WHERE player_id = $1 AND turn_id = $2;
+
+
+-- name: GetLastPlayerStatus :one
+SELECT * FROM player_status
+WHERE player_status.player_id = $1
+ORDER BY player_status.created_at DESC LIMIT 1;

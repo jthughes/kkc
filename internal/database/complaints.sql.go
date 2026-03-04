@@ -37,36 +37,28 @@ func (q *Queries) CreatePlayerComplaint(ctx context.Context, arg CreatePlayerCom
 }
 
 const deletePlayerComplaint = `-- name: DeletePlayerComplaint :exec
-DELETE FROM elevation_points
-WHERE id=$1
+DELETE FROM complaints
+WHERE action_id=$1
 `
 
-func (q *Queries) DeletePlayerComplaint(ctx context.Context, id int32) error {
-	_, err := q.db.ExecContext(ctx, deletePlayerComplaint, id)
+func (q *Queries) DeletePlayerComplaint(ctx context.Context, actionID int32) error {
+	_, err := q.db.ExecContext(ctx, deletePlayerComplaint, actionID)
 	return err
 }
 
 const getPlayerComplaints = `-- name: GetPlayerComplaints :one
-SELECT id, created_at, action_id, ep_linguistics, ep_arithmetics, ep_rhetoric_and_logic, ep_archives, ep_sympathy, ep_physicking, ep_alchemy, ep_artificery, ep_naming FROM elevation_points
+SELECT id, created_at, action_id, target_id FROM complaints
 WHERE action_id=$1
 `
 
-func (q *Queries) GetPlayerComplaints(ctx context.Context, actionID int32) (ElevationPoint, error) {
+func (q *Queries) GetPlayerComplaints(ctx context.Context, actionID int32) (Complaint, error) {
 	row := q.db.QueryRowContext(ctx, getPlayerComplaints, actionID)
-	var i ElevationPoint
+	var i Complaint
 	err := row.Scan(
 		&i.ID,
 		&i.CreatedAt,
 		&i.ActionID,
-		&i.EpLinguistics,
-		&i.EpArithmetics,
-		&i.EpRhetoricAndLogic,
-		&i.EpArchives,
-		&i.EpSympathy,
-		&i.EpPhysicking,
-		&i.EpAlchemy,
-		&i.EpArtificery,
-		&i.EpNaming,
+		&i.TargetID,
 	)
 	return i, err
 }

@@ -66,7 +66,7 @@ type GetPlayerByIDRow struct {
 	GameID     int32
 	Name       sql.NullString
 	Alive      bool
-	Skindancer sql.NullBool
+	Skindancer bool
 	Class      NullClassType
 }
 
@@ -100,7 +100,7 @@ type GetPlayerByNameRow struct {
 	GameID      int32
 	Name        sql.NullString
 	Alive       bool
-	Skindancer  sql.NullBool
+	Skindancer  bool
 	Class       NullClassType
 	ID_2        int32
 	CreatedAt_2 time.Time
@@ -138,7 +138,7 @@ type GetPlayersRow struct {
 	GameID      int32
 	Name        sql.NullString
 	Alive       bool
-	Skindancer  sql.NullBool
+	Skindancer  bool
 	Class       NullClassType
 	ID_2        int32
 	CreatedAt_2 time.Time
@@ -178,4 +178,52 @@ func (q *Queries) GetPlayers(ctx context.Context, gameID int32) ([]GetPlayersRow
 		return nil, err
 	}
 	return items, nil
+}
+
+const updatePlayerClass = `-- name: UpdatePlayerClass :exec
+UPDATE players SET class = $2
+WHERE id=$1
+RETURNING id, created_at, user_id, game_id, name, alive, skindancer, class
+`
+
+type UpdatePlayerClassParams struct {
+	ID    int32
+	Class NullClassType
+}
+
+func (q *Queries) UpdatePlayerClass(ctx context.Context, arg UpdatePlayerClassParams) error {
+	_, err := q.db.ExecContext(ctx, updatePlayerClass, arg.ID, arg.Class)
+	return err
+}
+
+const updatePlayerRole = `-- name: UpdatePlayerRole :exec
+UPDATE players SET skindancer = $2
+WHERE id=$1
+RETURNING id, created_at, user_id, game_id, name, alive, skindancer, class
+`
+
+type UpdatePlayerRoleParams struct {
+	ID         int32
+	Skindancer bool
+}
+
+func (q *Queries) UpdatePlayerRole(ctx context.Context, arg UpdatePlayerRoleParams) error {
+	_, err := q.db.ExecContext(ctx, updatePlayerRole, arg.ID, arg.Skindancer)
+	return err
+}
+
+const updatePlayerStatus = `-- name: UpdatePlayerStatus :exec
+UPDATE players SET alive = $2
+WHERE id=$1
+RETURNING id, created_at, user_id, game_id, name, alive, skindancer, class
+`
+
+type UpdatePlayerStatusParams struct {
+	ID    int32
+	Alive bool
+}
+
+func (q *Queries) UpdatePlayerStatus(ctx context.Context, arg UpdatePlayerStatusParams) error {
+	_, err := q.db.ExecContext(ctx, updatePlayerStatus, arg.ID, arg.Alive)
+	return err
 }

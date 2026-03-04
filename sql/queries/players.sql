@@ -23,3 +23,18 @@ DELETE FROM players;
 -- name: GetPlayers :many
 SELECT * FROM players INNER JOIN users ON players.user_id=users.ID
 WHERE game_id = $1;
+
+-- name: UpdatePlayerRole :exec
+UPDATE players SET skindancer = $2
+WHERE id=$1
+RETURNING *;
+
+-- name: UpdatePlayerClass :exec
+UPDATE players SET class = $2
+WHERE id=$1
+RETURNING *;
+
+-- name: UpdatePlayerStatus :exec
+UPDATE players SET alive = $2
+WHERE id=$1
+RETURNING *;

@@ -41,7 +41,8 @@ func main() {
 
 	gm, err := cfg.db.CreateUser(context.Background(), "Sapphire Elephant")
 	if err != nil {
-		fmt.Errorf("unable to create new user", err)
+		fmt.Printf("database error: %v", err)
+		os.Exit(1)
 	}
 	user1, err := cfg.db.CreateUser(context.Background(), "Indigo Weasel")
 	if err != nil {
@@ -61,37 +62,39 @@ func main() {
 
 	game, err := cfg.newGame(gm, "Blood on the wind", "Long Game", "1")
 
-	player1, err := cfg.registerPlayer(game, user1, "Kvothe")
-	player2, err := cfg.registerPlayer(game, user2, "Denna")
-	player3, err := cfg.registerPlayer(game, user3, "Auri")
+	_, err = cfg.registerPlayer(game, user1, "Kvothe")
+	_, err = cfg.registerPlayer(game, user2, "Denna")
+	_, err = cfg.registerPlayer(game, user3, "Auri")
 
-	var players = make(map[int32]database.Player)
-	players[user1.ID] = player1
-	players[player2.UserID] = player2
-	players[player3.UserID] = player3
+	cfg.startGame(game)
 
-	users, err := cfg.db.GetUsers(context.Background())
-	if err != nil {
-		fmt.Printf("database error: %v", err)
-		os.Exit(1)
-	}
+	// var players = make(map[int32]database.Player)
+	// players[user1.ID] = player1
+	// players[player2.UserID] = player2
+	// players[player3.UserID] = player3
 
-	for _, user := range users {
-		player, ok := players[user.ID]
-		player_name := ""
-		if ok && player.Name.Valid {
-			player_name = player.Name.String
-		}
-		fmt.Printf("%d: %s (%s)\n", user.ID, user.Username, player_name)
-	}
+	// users, err := cfg.db.GetUsers(context.Background())
+	// if err != nil {
+	// 	fmt.Printf("database error: %v", err)
+	// 	os.Exit(1)
+	// }
 
-	turn, err := cfg.newTurn(game, 1, 1)
+	// for _, user := range users {
+	// 	player, ok := players[user.ID]
+	// 	player_name := ""
+	// 	if ok && player.Name.Valid {
+	// 		player_name = player.Name.String
+	// 	}
+	// 	fmt.Printf("%d: %s (%s)\n", user.ID, user.Username, player_name)
+	// }
 
-	status, err := cfg.db.GetPlayerStatusByID(context.Background(), database.GetPlayerStatusByIDParams{
-		PlayerID: player2.ID,
-		TurnID:   turn.ID,
-	})
+	// turn, err := cfg.newTurn(game, 1, 1)
 
-	player, err := cfg.db.GetPlayerByID(context.Background(), status.PlayerID)
-	fmt.Printf("%s has %d EP in Physicking\n", player.Username, status.EpPhysicking)
+	// status, err := cfg.db.GetPlayerStatusByID(context.Background(), database.GetPlayerStatusByIDParams{
+	// 	PlayerID: player2.ID,
+	// 	TurnID:   turn.ID,
+	// })
+
+	// player, err := cfg.db.GetPlayerByID(context.Background(), status.PlayerID)
+	// fmt.Printf("%s has %d EP in Physicking\n", player.Username, status.EpPhysicking)
 }

@@ -7,7 +7,99 @@ package database
 
 import (
 	"context"
+	"time"
 )
+
+const getLastPlayerTurn = `-- name: GetLastPlayerTurn :one
+SELECT pt.id, created_at, player_id, turn_id, posts, private_messages, quality_posts, quality_rp, actions.id, lodging, visit_imre, attend_university, action_id, ep_alchemy, ep_archives, ep_arithmetics, ep_artificery, ep_linguistics, ep_naming, ep_physicking, ep_rhetoric_and_logic, ep_sympathy FROM player_turns pt
+    JOIN actions ON actions.id = pt.id
+    JOIN elevation_points ep ON ep.action_id = pt.id
+WHERE pt.player_id = $1
+ORDER BY pt.created_at DESC LIMIT 1
+`
+
+type GetLastPlayerTurnRow struct {
+	ID                 int32
+	CreatedAt          time.Time
+	PlayerID           int32
+	TurnID             int32
+	Posts              int32
+	PrivateMessages    int32
+	QualityPosts       int32
+	QualityRp          int32
+	ID_2               int32
+	Lodging            LodgingType
+	VisitImre          bool
+	AttendUniversity   bool
+	ActionID           int32
+	EpAlchemy          int32
+	EpArchives         int32
+	EpArithmetics      int32
+	EpArtificery       int32
+	EpLinguistics      int32
+	EpNaming           int32
+	EpPhysicking       int32
+	EpRhetoricAndLogic int32
+	EpSympathy         int32
+}
+
+func (q *Queries) GetLastPlayerTurn(ctx context.Context, playerID int32) (GetLastPlayerTurnRow, error) {
+	row := q.db.QueryRowContext(ctx, getLastPlayerTurn, playerID)
+	var i GetLastPlayerTurnRow
+	err := row.Scan(
+		&i.ID,
+		&i.CreatedAt,
+		&i.PlayerID,
+		&i.TurnID,
+		&i.Posts,
+		&i.PrivateMessages,
+		&i.QualityPosts,
+		&i.QualityRp,
+		&i.ID_2,
+		&i.Lodging,
+		&i.VisitImre,
+		&i.AttendUniversity,
+		&i.ActionID,
+		&i.EpAlchemy,
+		&i.EpArchives,
+		&i.EpArithmetics,
+		&i.EpArtificery,
+		&i.EpLinguistics,
+		&i.EpNaming,
+		&i.EpPhysicking,
+		&i.EpRhetoricAndLogic,
+		&i.EpSympathy,
+	)
+	return i, err
+}
+
+const getPlayerTurn = `-- name: GetPlayerTurn :one
+SELECT pt.id, pt.created_at, pt.player_id, pt.turn_id, pt.posts, pt.private_messages, pt.quality_posts, pt.quality_rp FROM player_turns pt
+JOIN game_turns gt ON pt.turn_id = gt.id
+WHERE pt.player_id = $1 AND gt.term = $2 AND gt.month = $3
+`
+
+type GetPlayerTurnParams struct {
+	PlayerID int32
+	Term     int32
+	Month    int32
+}
+
+func (q *Queries) GetPlayerTurn(ctx context.Context, arg GetPlayerTurnParams) (PlayerTurn, error) {
+	row := q.db.QueryRowContext(ctx, getPlayerTurn, arg.PlayerID, arg.Term, arg.Month)
+	var i PlayerTurn
+	err := row.Scan(
+		&i.ID,
+		&i.CreatedAt,
+		&i.PlayerID,
+		&i.TurnID,
+		&i.Posts,
+		&i.PrivateMessages,
+		&i.QualityPosts,
+		&i.QualityRp,
+	)
+	return i, err
+}
 
 const getPlayerTurnsByID = `-- name: GetPlayerTurnsByID :many
 SELECT id, created_at, player_id, turn_id, posts, private_messages, quality_posts, quality_rp FROM player_turns

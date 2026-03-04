@@ -9,8 +9,8 @@ RETURNING *;
 SELECT * FROM elevation_points
 WHERE action_id=$1 LIMIT 1;
 
--- name: UpdatePlayerEPSubmission :one
-UPDATE elevation_points SET (ep_linguistics, ep_arithmetics, ep_rhetoric_and_logic, ep_archives, ep_sympathy, ep_physicking, ep_alchemy, ep_artificery, ep_naming)
+-- name: UpdatePlayerEPSubmission :exec
+UPDATE elevation_points SET (ep_alchemy, ep_archives, ep_arithmetics, ep_artificery, ep_linguistics, ep_naming, ep_physicking, ep_rhetoric_and_logic, ep_sympathy)
 = (
     $2,
     $3,
@@ -21,5 +21,4 @@ UPDATE elevation_points SET (ep_linguistics, ep_arithmetics, ep_rhetoric_and_log
     $8,
     $9,
     $10
-) WHERE action_id=$1
-RETURNING *;
+) WHERE action_id=$1;

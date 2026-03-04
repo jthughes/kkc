@@ -11,7 +11,7 @@ import (
 )
 
 const getAllPlayerStatus = `-- name: GetAllPlayerStatus :many
-SELECT id, created_at, player_id, turn_id, sane, crockery, lodging, imre, university, medica, coin, ep_linguistics, ep_arithmetics, ep_rhetoric_and_logic, ep_archives, ep_sympathy, ep_physicking, ep_alchemy, ep_artificery, ep_naming FROM player_status
+SELECT id, created_at, player_id, turn_id, sane, crockery, lodging, imre, university, medica, coin, ep_alchemy, ep_archives, ep_arithmetics, ep_artificery, ep_linguistics, ep_naming, ep_physicking, ep_rhetoric_and_logic, ep_sympathy FROM player_status
 `
 
 func (q *Queries) GetAllPlayerStatus(ctx context.Context) ([]PlayerStatus, error) {
@@ -35,15 +35,15 @@ func (q *Queries) GetAllPlayerStatus(ctx context.Context) ([]PlayerStatus, error
 			&i.University,
 			&i.Medica,
 			&i.Coin,
-			&i.EpLinguistics,
-			&i.EpArithmetics,
-			&i.EpRhetoricAndLogic,
-			&i.EpArchives,
-			&i.EpSympathy,
-			&i.EpPhysicking,
 			&i.EpAlchemy,
+			&i.EpArchives,
+			&i.EpArithmetics,
 			&i.EpArtificery,
+			&i.EpLinguistics,
 			&i.EpNaming,
+			&i.EpPhysicking,
+			&i.EpRhetoricAndLogic,
+			&i.EpSympathy,
 		); err != nil {
 			return nil, err
 		}
@@ -58,8 +58,42 @@ func (q *Queries) GetAllPlayerStatus(ctx context.Context) ([]PlayerStatus, error
 	return items, nil
 }
 
+const getLastPlayerStatus = `-- name: GetLastPlayerStatus :one
+SELECT id, created_at, player_id, turn_id, sane, crockery, lodging, imre, university, medica, coin, ep_alchemy, ep_archives, ep_arithmetics, ep_artificery, ep_linguistics, ep_naming, ep_physicking, ep_rhetoric_and_logic, ep_sympathy FROM player_status
+WHERE player_status.player_id = $1
+ORDER BY player_status.created_at DESC LIMIT 1
+`
+
+func (q *Queries) GetLastPlayerStatus(ctx context.Context, playerID int32) (PlayerStatus, error) {
+	row := q.db.QueryRowContext(ctx, getLastPlayerStatus, playerID)
+	var i PlayerStatus
+	err := row.Scan(
+		&i.ID,
+		&i.CreatedAt,
+		&i.PlayerID,
+		&i.TurnID,
+		&i.Sane,
+		&i.Crockery,
+		&i.Lodging,
+		&i.Imre,
+		&i.University,
+		&i.Medica,
+		&i.Coin,
+		&i.EpAlchemy,
+		&i.EpArchives,
+		&i.EpArithmetics,
+		&i.EpArtificery,
+		&i.EpLinguistics,
+		&i.EpNaming,
+		&i.EpPhysicking,
+		&i.EpRhetoricAndLogic,
+		&i.EpSympathy,
+	)
+	return i, err
+}
+
 const getPlayerStatusByID = `-- name: GetPlayerStatusByID :one
-SELECT id, created_at, player_id, turn_id, sane, crockery, lodging, imre, university, medica, coin, ep_linguistics, ep_arithmetics, ep_rhetoric_and_logic, ep_archives, ep_sympathy, ep_physicking, ep_alchemy, ep_artificery, ep_naming FROM player_status
+SELECT id, created_at, player_id, turn_id, sane, crockery, lodging, imre, university, medica, coin, ep_alchemy, ep_archives, ep_arithmetics, ep_artificery, ep_linguistics, ep_naming, ep_physicking, ep_rhetoric_and_logic, ep_sympathy FROM player_status
 WHERE player_id = $1 AND turn_id = $2
 `
 
@@ -83,21 +117,21 @@ func (q *Queries) GetPlayerStatusByID(ctx context.Context, arg GetPlayerStatusBy
 		&i.University,
 		&i.Medica,
 		&i.Coin,
-		&i.EpLinguistics,
-		&i.EpArithmetics,
-		&i.EpRhetoricAndLogic,
-		&i.EpArchives,
-		&i.EpSympathy,
-		&i.EpPhysicking,
 		&i.EpAlchemy,
+		&i.EpArchives,
+		&i.EpArithmetics,
 		&i.EpArtificery,
+		&i.EpLinguistics,
 		&i.EpNaming,
+		&i.EpPhysicking,
+		&i.EpRhetoricAndLogic,
+		&i.EpSympathy,
 	)
 	return i, err
 }
 
 const newPlayerStatus = `-- name: NewPlayerStatus :one
-INSERT INTO player_status (player_id, turn_id, sane, crockery, lodging, imre, university, medica, coin, ep_linguistics, ep_arithmetics, ep_rhetoric_and_logic, ep_archives, ep_sympathy, ep_physicking, ep_alchemy, ep_artificery, ep_naming)
+INSERT INTO player_status (player_id, turn_id, sane, crockery, lodging, imre, university, medica, coin, ep_alchemy, ep_archives, ep_arithmetics, ep_artificery, ep_linguistics, ep_naming, ep_physicking, ep_rhetoric_and_logic, ep_sympathy)
 VALUES (
     $1,
     $2,
@@ -118,7 +152,7 @@ VALUES (
     $17,
     $18
 )
-RETURNING id, created_at, player_id, turn_id, sane, crockery, lodging, imre, university, medica, coin, ep_linguistics, ep_arithmetics, ep_rhetoric_and_logic, ep_archives, ep_sympathy, ep_physicking, ep_alchemy, ep_artificery, ep_naming
+RETURNING id, created_at, player_id, turn_id, sane, crockery, lodging, imre, university, medica, coin, ep_alchemy, ep_archives, ep_arithmetics, ep_artificery, ep_linguistics, ep_naming, ep_physicking, ep_rhetoric_and_logic, ep_sympathy
 `
 
 type NewPlayerStatusParams struct {
@@ -131,15 +165,15 @@ type NewPlayerStatusParams struct {
 	University         sql.NullBool
 	Medica             sql.NullBool
 	Coin               float64
-	EpLinguistics      int32
-	EpArithmetics      int32
-	EpRhetoricAndLogic int32
-	EpArchives         int32
-	EpSympathy         int32
-	EpPhysicking       int32
 	EpAlchemy          int32
+	EpArchives         int32
+	EpArithmetics      int32
 	EpArtificery       int32
+	EpLinguistics      int32
 	EpNaming           int32
+	EpPhysicking       int32
+	EpRhetoricAndLogic int32
+	EpSympathy         int32
 }
 
 func (q *Queries) NewPlayerStatus(ctx context.Context, arg NewPlayerStatusParams) (PlayerStatus, error) {
@@ -153,15 +187,15 @@ func (q *Queries) NewPlayerStatus(ctx context.Context, arg NewPlayerStatusParams
 		arg.University,
 		arg.Medica,
 		arg.Coin,
-		arg.EpLinguistics,
-		arg.EpArithmetics,
-		arg.EpRhetoricAndLogic,
-		arg.EpArchives,
-		arg.EpSympathy,
-		arg.EpPhysicking,
 		arg.EpAlchemy,
+		arg.EpArchives,
+		arg.EpArithmetics,
 		arg.EpArtificery,
+		arg.EpLinguistics,
 		arg.EpNaming,
+		arg.EpPhysicking,
+		arg.EpRhetoricAndLogic,
+		arg.EpSympathy,
 	)
 	var i PlayerStatus
 	err := row.Scan(
@@ -176,15 +210,15 @@ func (q *Queries) NewPlayerStatus(ctx context.Context, arg NewPlayerStatusParams
 		&i.University,
 		&i.Medica,
 		&i.Coin,
-		&i.EpLinguistics,
-		&i.EpArithmetics,
-		&i.EpRhetoricAndLogic,
-		&i.EpArchives,
-		&i.EpSympathy,
-		&i.EpPhysicking,
 		&i.EpAlchemy,
+		&i.EpArchives,
+		&i.EpArithmetics,
 		&i.EpArtificery,
+		&i.EpLinguistics,
 		&i.EpNaming,
+		&i.EpPhysicking,
+		&i.EpRhetoricAndLogic,
+		&i.EpSympathy,
 	)
 	return i, err
 }
