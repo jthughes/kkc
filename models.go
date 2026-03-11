@@ -32,6 +32,11 @@ type playerAction struct {
 	lodging          string
 	visitImre        bool
 	attendUniversity bool
-	complaints       []string
+	complaints       []Complaint
 	elevationPoints  [9]int
+}
+
+type Complaint struct {
+	target     playerID
+	fromAction bool
 }
