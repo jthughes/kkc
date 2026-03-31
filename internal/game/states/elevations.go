@@ -1,29 +1,29 @@
-package main
+package game_states
 
 import (
 	"fmt"
 	"math/rand"
+
+	"github.com/jthughes/kkc/internal/game/models"
 )
 
-type playerID int32
-
-func getPlayerElevations(playerTurns []playerTurn) map[playerID]Field {
+func getPlayerElevations(playerTurns []models.PlayerTurn) map[models.PlayerID]models.Field {
 	// Initialise master elevation pools
-	mastersAbleToElevate := map[Field]map[playerID]int{}
+	mastersAbleToElevate := map[models.Field]map[models.PlayerID]int{}
 
-	// If no player has EP in a field, the master will not get added to the map
+	// If no player has EP in a models.Field, the master will not get added to the map
 	for _, player := range playerTurns {
-		for i, ep := range player.status.elevationPoints {
+		for i, ep := range player.Status.ElevationPoints {
 			if ep != 0 {
-				mastersAbleToElevate[Field(i)][player.player.ID] = ep
+				mastersAbleToElevate[models.Field(i)][player.Player.ID] = ep
 			}
 		}
 	}
 
-	finalElevations := map[playerID]Field{}
+	finalElevations := map[models.PlayerID]models.Field{}
 	for len(mastersAbleToElevate) > 0 {
 		// choose elevation for each master
-		masterSelections := map[Field]playerID{}
+		masterSelections := map[models.Field]models.PlayerID{}
 		for field, players := range mastersAbleToElevate {
 			// Count total EP pool
 			sum := 0
@@ -61,7 +61,7 @@ func getPlayerElevations(playerTurns []playerTurn) map[playerID]Field {
 
 		// Check selections for double ups
 		// Of players selected, list all elevations they were were selected for
-		playersElevated := map[playerID]map[Field]struct{}{}
+		playersElevated := map[models.PlayerID]map[models.Field]struct{}{}
 
 		for field, playerID := range masterSelections {
 			playersElevated[playerID][field] = struct{}{}
@@ -84,18 +84,18 @@ func getPlayerElevations(playerTurns []playerTurn) map[playerID]Field {
 	return finalElevations
 }
 
-func (cfg config) elevations(playerTurns []playerTurn) {
-	// Need a list/map per field to populate with all
+func Elevations(playerTurns []models.PlayerTurn) {
+	// Need a list/map per models.Field to populate with all
 
 	// Account for Aturan noble backing out of elevation?
 	elevations := getPlayerElevations(playerTurns)
 
 	for _, player := range playerTurns {
-		if field, ok := elevations[player.player.ID]; ok {
-			ep := player.status.elevationPoints[field]
-			player.status.elevationPoints[field] = max(0, ep-5)
-			player.player.Rank += 1
-			fmt.Printf("%s was elevated to rank %d by the Master of %s (%Dd ep remaining)\n", player.player.Name, player.player.Rank, field, player.status.elevationPoints[field])
+		if field, ok := elevations[player.Player.ID]; ok {
+			ep := player.Status.ElevationPoints[field]
+			player.Status.ElevationPoints[field] = max(0, ep-5)
+			player.Player.Rank += 1
+			fmt.Printf("%s was elevated to rank %d by the Master of %s (%d ep remaining)\n", player.Player.Name, player.Player.Rank, models.FieldName[field], player.Status.ElevationPoints[field])
 		}
 
 	}
