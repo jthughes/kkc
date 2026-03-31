@@ -46,12 +46,26 @@ type PlayerTurn struct {
 	Actions PlayerAction
 }
 
+type MedicaStatus struct {
+	Firestop   bool
+	Emergency  bool
+	Detainment bool
+}
+
+type ItemType int
+
+type Item struct {
+	Type ItemType
+	Uses int
+}
+
 type PlayerStatus struct {
 	Alive    bool
 	Sane     bool
 	Expelled bool
 	Crockery bool
-	Medica   bool
+	Medica   MedicaStatus
+	Lashed   int
 
 	Lodging    lodging.Lodging
 	Imre       bool
@@ -59,6 +73,7 @@ type PlayerStatus struct {
 
 	Coin            float32
 	ElevationPoints [9]int
+	Items           []Item
 }
 
 type PlayerAction struct {
@@ -67,23 +82,58 @@ type PlayerAction struct {
 	AttendUniversity bool
 	Complaints       []Complaint
 	ElevationPoints  [9]int
+	Actions          []Action
 }
 
 type Action struct {
-	Actor   *Player
-	Type    ActionType
-	Target1 *Player
-	Target2 *Player
+	ID         int
+	Actor      *Player        // Which player is taking the action
+	Type       ActionType     // The specific action taken
+	Source     ActionSource   // What field the action was obtained from
+	Category   ActionCategory // The broad category of the action (protect, block)
+	Target     *Player
+	Target2    *Player
+	TargetType ActionType
 }
 
 type ActionType int
 
 const (
-	Sabotage ActionType = iota
+	None ActionType = iota
+	Sabotage
+	LawOfContraposition
 )
 
 var ActionTypeName = map[ActionType]string{
-	Sabotage: "Sabotage",
+	None:                "None",
+	Sabotage:            "Sabotage",
+	LawOfContraposition: "Law of Contraposition",
+}
+
+type ActionSource int
+
+const (
+	SourceAlchemy ActionSource = iota
+	SourceArchives
+	SourceArithmetics
+	SourceArtificery
+	SourceLinguistics
+	SourceNaming
+	SourcePhysicking
+	SourceRhetoricAndLogic
+	SourceSympathy
+)
+
+type ActionCategory int
+
+const (
+	General ActionCategory = iota
+	Roleblock
+)
+
+var ActionCategoryName = map[ActionCategory]string{
+	General:   "General",
+	Roleblock: "Roleblock",
 }
 
 type Complaint struct {
