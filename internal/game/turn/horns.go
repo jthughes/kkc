@@ -1,11 +1,12 @@
-package game_states
+package turn
 
 import (
 	"fmt"
 	"math/rand"
 
 	"github.com/jthughes/kkc/internal/game/lodging"
-	"github.com/jthughes/kkc/internal/game/models"
+	"github.com/jthughes/kkc/internal/game/player"
+	gamestate "github.com/jthughes/kkc/internal/game/state"
 )
 
 // Vote manipulation actions processed at this step. Any blocks or redirects should have already applied, and any a
@@ -19,24 +20,24 @@ import (
 // Consequences
 //
 
-func helper(playerTurns []models.PlayerTurn) map[models.PlayerID]models.Field {
+func helper(playerTurns []player.Turn) map[player.PlayerID]gamestate.Field {
 
 	// Initialise master elevation pools
-	mastersAbleToElevate := map[models.Field]map[models.PlayerID]int{}
+	mastersAbleToElevate := map[gamestate.Field]map[player.PlayerID]int{}
 
 	// If no player has EP in a field, the master will not get added to the map
 	for _, player := range playerTurns {
 		for i, ep := range player.Status.ElevationPoints {
 			if ep != 0 {
-				mastersAbleToElevate[models.Field(i)][player.Player.ID] = ep
+				mastersAbleToElevate[gamestate.Field(i)][player.Player.ID] = ep
 			}
 		}
 	}
 
-	finalElevations := map[models.PlayerID]models.Field{}
+	finalElevations := map[player.PlayerID]gamestate.Field{}
 	for len(mastersAbleToElevate) > 0 {
 		// choose elevation for each master
-		masterSelections := map[models.Field]models.PlayerID{}
+		masterSelections := map[gamestate.Field]player.PlayerID{}
 		for field, players := range mastersAbleToElevate {
 			// Count total EP pool
 			sum := 0
@@ -74,7 +75,7 @@ func helper(playerTurns []models.PlayerTurn) map[models.PlayerID]models.Field {
 
 		// Check selections for double ups
 		// Of players selected, list all elevations they were were selected for
-		playersElevated := map[models.PlayerID]map[models.Field]struct{}{}
+		playersElevated := map[player.PlayerID]map[gamestate.Field]struct{}{}
 
 		for field, playerID := range masterSelections {
 			playersElevated[playerID][field] = struct{}{}
@@ -106,7 +107,7 @@ func helper(playerTurns []models.PlayerTurn) map[models.PlayerID]models.Field {
 // Consequences
 //
 
-func horns(playerTurns map[models.PlayerID]models.PlayerTurn) {
+func horns(playerTurns map[player.PlayerID]player.Turn) {
 	// Gather list of all filed complaints
 
 	// Remove disqualified complaints
@@ -118,7 +119,7 @@ func horns(playerTurns map[models.PlayerID]models.PlayerTurn) {
 	// - Bonetar Injury (Rank 3-4)
 	// - Targetting a master
 
-	complaintsFiled := map[models.PlayerID][]models.Complaint{}
+	complaintsFiled := map[player.PlayerID][]player.Complaint{}
 	for ID, player := range playerTurns {
 		complaintsFiled[ID] = player.Actions.Complaints
 	}
@@ -130,7 +131,7 @@ func horns(playerTurns map[models.PlayerID]models.PlayerTurn) {
 	//
 
 	// Build vote tally
-	complaintsReceived := map[models.PlayerID]int{}
+	complaintsReceived := map[player.PlayerID]int{}
 
 	for _, complaints := range complaintsFiled {
 		for _, complaint := range complaints {
@@ -164,9 +165,9 @@ func horns(playerTurns map[models.PlayerID]models.PlayerTurn) {
 }
 
 // Will need to allow for PC masters
-func assignDP(playerTurns map[models.PlayerID]models.PlayerTurn, complaintsReceived map[models.PlayerID]int, masterDP int) map[models.PlayerID]int {
+func assignDP(playerTurns map[player.PlayerID]player.Turn, complaintsReceived map[player.PlayerID]int, masterDP int) map[player.PlayerID]int {
 	// Convert complaints to DP
-	disciplinePoints := map[models.PlayerID]int{}
+	disciplinePoints := map[player.PlayerID]int{}
 
 	totalComplaints := 0
 	for player, complaints := range complaintsReceived {
@@ -176,7 +177,7 @@ func assignDP(playerTurns map[models.PlayerID]models.PlayerTurn, complaintsRecei
 
 	// Assign master DP
 	// - Check for Master's EP
-	for field := range models.Field(9) {
+	for field := range gamestate.Field(9) {
 		for _ = range masterDP {
 			selection, ok := selectRandomPlayerForDP(complaintsReceived, totalComplaints)
 			if !ok {
@@ -198,7 +199,7 @@ func assignDP(playerTurns map[models.PlayerID]models.PlayerTurn, complaintsRecei
 
 // Returns PlayerID of selection.
 // Ok returns false if no player found
-func selectRandomPlayerForDP(complaintsReceived map[models.PlayerID]int, totalComplaints int) (models.PlayerID, bool) {
+func selectRandomPlayerForDP(complaintsReceived map[player.PlayerID]int, totalComplaints int) (player.PlayerID, bool) {
 	selectionIndex := rand.Intn(totalComplaints)
 	count := 0
 	for player, complaints := range complaintsReceived {

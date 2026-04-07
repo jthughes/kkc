@@ -1,29 +1,30 @@
-package game_states
+package turn
 
 import (
 	"fmt"
 	"math/rand"
 
-	"github.com/jthughes/kkc/internal/game/models"
+	"github.com/jthughes/kkc/internal/game/player"
+	gamestate "github.com/jthughes/kkc/internal/game/state"
 )
 
-func getPlayerElevations(playerTurns []models.PlayerTurn) map[models.PlayerID]models.Field {
+func getPlayerElevations(playerTurns []player.Turn) map[player.PlayerID]gamestate.Field {
 	// Initialise master elevation pools
-	mastersAbleToElevate := map[models.Field]map[models.PlayerID]int{}
+	mastersAbleToElevate := map[gamestate.Field]map[player.PlayerID]int{}
 
 	// If no player has EP in a models.Field, the master will not get added to the map
 	for _, player := range playerTurns {
 		for i, ep := range player.Status.ElevationPoints {
 			if ep != 0 {
-				mastersAbleToElevate[models.Field(i)][player.Player.ID] = ep
+				mastersAbleToElevate[gamestate.Field(i)][player.Player.ID] = ep
 			}
 		}
 	}
 
-	finalElevations := map[models.PlayerID]models.Field{}
+	finalElevations := map[player.PlayerID]gamestate.Field{}
 	for len(mastersAbleToElevate) > 0 {
 		// choose elevation for each master
-		masterSelections := map[models.Field]models.PlayerID{}
+		masterSelections := map[gamestate.Field]player.PlayerID{}
 		for field, players := range mastersAbleToElevate {
 			// Count total EP pool
 			sum := 0
@@ -61,7 +62,7 @@ func getPlayerElevations(playerTurns []models.PlayerTurn) map[models.PlayerID]mo
 
 		// Check selections for double ups
 		// Of players selected, list all elevations they were were selected for
-		playersElevated := map[models.PlayerID]map[models.Field]struct{}{}
+		playersElevated := map[player.PlayerID]map[gamestate.Field]struct{}{}
 
 		for field, playerID := range masterSelections {
 			playersElevated[playerID][field] = struct{}{}
@@ -84,7 +85,7 @@ func getPlayerElevations(playerTurns []models.PlayerTurn) map[models.PlayerID]mo
 	return finalElevations
 }
 
-func Elevations(playerTurns []models.PlayerTurn) {
+func Elevations(playerTurns []player.Turn) {
 	// Need a list/map per models.Field to populate with all
 
 	// Account for Aturan noble backing out of elevation?
@@ -95,7 +96,7 @@ func Elevations(playerTurns []models.PlayerTurn) {
 			ep := player.Status.ElevationPoints[field]
 			player.Status.ElevationPoints[field] = max(0, ep-5)
 			player.Player.Rank += 1
-			fmt.Printf("%s was elevated to rank %d by the Master of %s (%d ep remaining)\n", player.Player.Name, player.Player.Rank, models.FieldName[field], player.Status.ElevationPoints[field])
+			fmt.Printf("%s was elevated to rank %d by the Master of %s (%d ep remaining)\n", player.Player.Name, player.Player.Rank, gamestate.FieldName[field], player.Status.ElevationPoints[field])
 		}
 
 	}

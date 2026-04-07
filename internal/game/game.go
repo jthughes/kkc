@@ -2,15 +2,16 @@ package game
 
 import (
 	"math/rand"
-	"slices"
 
+	"github.com/jthughes/kkc/internal/game/items"
 	"github.com/jthughes/kkc/internal/game/lodging"
-	"github.com/jthughes/kkc/internal/game/models"
-	game_states "github.com/jthughes/kkc/internal/game/states"
+	"github.com/jthughes/kkc/internal/game/player"
+	gamestate "github.com/jthughes/kkc/internal/game/state"
+	"github.com/jthughes/kkc/internal/game/turn"
 )
 
-func newGame(game_master models.User, game_title, game_type, game_number string) (models.Game, error) {
-	return models.Game{
+func newGame(game_master gamestate.User, game_title, game_type, game_number string) (gamestate.Game, error) {
+	return gamestate.Game{
 		GameMaster: game_master.ID,
 		Name:       game_title,
 		Type:       game_type,
@@ -18,23 +19,23 @@ func newGame(game_master models.User, game_title, game_type, game_number string)
 	}, nil
 }
 
-func registerPlayer(game models.Game, user models.User, nickname string) (models.Player, error) {
-	player := models.Player{
-		ID:     models.PlayerID(rand.Int()),
+func registerPlayer(game gamestate.Game, user gamestate.User, nickname string) (player.Player, error) {
+	player := player.Player{
+		ID:     player.PlayerID(rand.Int()),
 		UserID: user.ID,
 		GameID: game.ID,
 		Name:   nickname,
 
 		Alive:      true,
 		Skindancer: false,
-		Rank:       models.Student,
-		Class:      models.EdemaRuh,
+		Rank:       player.Student,
+		Class:      player.EdemaRuh,
 	}
 
 	return player, nil
 }
 
-func startGame(game models.Game) error {
+func startGame(game gamestate.Game) error {
 
 	//
 	// 2. Create first turn
@@ -49,11 +50,11 @@ func startGame(game models.Game) error {
 	// 2. Create EP
 	//   - Initial EP submission
 
-	players, err := [...]models.Player{}, nil
+	players, err := [...]player.Player{}, nil
 
-	for _, player := range players {
+	for _, p := range players {
 		// Determine player class
-		class := models.Class(rand.Intn(len(models.ClassName))) // Ruh: 0 -> Vint:4
+		class := player.Class(rand.Intn(len(player.ClassName))) // Ruh: 0 -> Vint:4
 		// class := ClassName[Class(class)]
 
 		// Determine starting lodging
@@ -65,15 +66,19 @@ func startGame(game models.Game) error {
 		EP[rand.Intn(9)] += 1
 		EP[rand.Intn(9)] += 1
 
-		player.Class = class
-		turn := models.PlayerTurn{
-			Player: player,
-			Status: models.PlayerStatus{
+		p.Class = class
+		turn := player.Turn{
+			Player: p,
+			Status: player.Status{
 				Alive:    true,
 				Sane:     true,
 				Expelled: false,
 				Crockery: false,
-				Medica:   false,
+				Medica: player.MedicaStatus{
+					Firestop:   false,
+					Emergency:  false,
+					Detainment: false,
+				},
 
 				Lodging:    lodging,
 				Imre:       false,
@@ -89,19 +94,19 @@ func startGame(game models.Game) error {
 	return nil
 }
 
-func getPlayerTurns() map[models.PlayerID]models.PlayerTurn {
+func getPlayerTurns() map[player.PlayerID]player.Turn {
 	// players, err := cfg.db.GetPlayers(context.Background(), game.ID)
-	return map[models.PlayerID]models.PlayerTurn{}
+	return map[player.PlayerID]player.Turn{}
 }
 
-func newTurn(game models.Game, term, month int32) (models.GameTurn, error) {
+func newTurn(game gamestate.Game, term, month int32) (gamestate.GameTurn, error) {
 	// Assumption is baked in that any player alive at the start of a turn has a player_status entry, a player_turn entry, and an actions entry all initialied to default values when appropriate.
 
 	// players, err := cfg.db.GetPlayers(context.Background(), game.ID)
-	players := []models.Player{}
+	players := []player.Player{}
 	// playerTurns := getPlayerTurns()
-	playerTurns := []models.PlayerTurn{}
-	actions := TurnActions{}
+	playerTurns := []player.Turn{}
+	actions := turn.Actions{}
 
 	// Passive Protects
 	// - Horse & Four: 50% chance of sabotage or kill failing
@@ -122,7 +127,7 @@ func newTurn(game models.Game, term, month int32) (models.GameTurn, error) {
 	// - medica emergency
 	//
 	//
-	actions = ApplyPassiveRoleblocks(actions, playerTurns)
+	actions = turn.ApplyPassiveRoleblocks(actions, playerTurns)
 
 	actions = KingsDrabSteal(actions, playerTurns)
 
@@ -133,6 +138,7 @@ func newTurn(game models.Game, term, month int32) (models.GameTurn, error) {
 	// [IGNORE] L3-4 Malfeasance Protection should probably be checked for upon processing action?
 
 	// Apply roleblocks (including item theft/destruction)
+	actions = turn.ApplyActiveRoleblocks(actions, playerTurns)
 
 	// Apply non-ofense actions + process Imre
 
@@ -150,7 +156,7 @@ func newTurn(game models.Game, term, month int32) (models.GameTurn, error) {
 	// Elevations
 	//  - Aturan Nobleman: 1/4 chance of refusing elevaation in Sympathy/Naming/Alchemy/Artificery
 
-	game_states.Elevations(playerTurns)
+	turn.Elevations(playerTurns)
 	// IP / EP offset
 	//
 	// Filing new EP
@@ -177,128 +183,19 @@ func newTurn(game models.Game, term, month int32) (models.GameTurn, error) {
 		}
 
 	}
-	return turn, err
+	return gamestate.GameTurn{}, nil
 }
 
-func playerComplaint(game models.Game, player models.Player, targetID int32) {
-
-}
-
-func playerEP(game models.Game, player models.Player, ep [9]int32) {
+func playerComplaint(game gamestate.Game, player player.Player, targetID int32) {
 
 }
 
-func UpdateProcessedActions(actions TurnActions, processedActions []models.Action, blocked bool) TurnActions {
-	// Added processedActions to actions.Processed
-	if blocked {
-		actions.Blocked = append(actions.Blocked, processedActions...)
-	} else {
-		actions.Applied = append(actions.Applied, processedActions...)
-	}
+func playerEP(game gamestate.Game, player player.Player, ep [9]int32) {
 
-	// Delete processedActions from actions.Unprocessed
-	actions.Unprocessed = slices.DeleteFunc(actions.Unprocessed, func(action models.Action) bool {
-		return slices.Contains(processedActions, action)
-	})
-
-	return actions
 }
 
-// All actions targetting a player on the streets need to check if they are on the streets
-func ApplyPassiveRoleblocks(actions TurnActions, turns []models.PlayerTurn) TurnActions {
-	var blockedActions []models.Action
-	for _, player := range turns {
-		if player.Player.Class == models.VintishNoble {
-			if rand.Float64() < 0.25 {
-				// blocked
-				for _, action := range player.Actions.Actions {
-					blockedActions = append(blockedActions, action)
-				}
-				// protected
-
-				continue
-			}
-		} else if player.Player.Class == models.AturanNoble {
-			if rand.Float64() < 0.1 {
-				// blocked
-				for _, action := range player.Actions.Actions {
-					blockedActions = append(blockedActions, action)
-				}
-				// protected
-				continue
-			}
-		}
-
-		if player.Status.Lodging == lodging.Streets {
-			// 50% chance of any the players actions being blocked.
-			// For each of the players actions
-			for _, action := range player.Actions.Actions {
-				if rand.Float64() < 0.5 {
-					// action fails
-					blockedActions = append(blockedActions, action)
-				}
-			}
-		} else if player.Status.Lodging == lodging.Ankers {
-			// 15% chance of player actions failing
-			if rand.Float64() < 0.15 {
-				// get collection of all of that players actions and choose one to remove
-				count := 0
-				for _, action := range player.Actions.Actions {
-					if slices.Contains(blockedActions, action) == false {
-						count += 1
-					}
-				}
-				if count != 0 {
-					count = 0
-					selection := rand.Intn(count)
-					for _, action := range player.Actions.Actions {
-						if slices.Contains(blockedActions, action) {
-							continue
-						}
-						if count == selection {
-							blockedActions = append(blockedActions, action)
-						} else {
-							count++
-						}
-					}
-				}
-			}
-		}
-
-		if player.Status.Lashed > 0 {
-			// Remove all actions
-			for _, action := range player.Actions.Actions {
-				// action fails
-				blockedActions = append(blockedActions, action)
-			}
-			// Set new Lashed count to Lashed-1
-		}
-
-		// This is just from firstop. Medica Detainment comes later.
-		if player.Status.Medica.Firestop {
-			// Remove all actions,
-			for _, action := range player.Actions.Actions {
-				// action fails
-				blockedActions = append(blockedActions, action)
-			}
-			// Set next turn status not in medica?
-		}
-		if player.Status.Medica.Emergency {
-			// Check if master to allow physicker actions
-			// - Need system/labels for action periods that determines which action is using what
-			//   period. Needs to be validated prior to these checks.
-			for _, action := range player.Actions.Actions {
-				// action fails
-				blockedActions = append(blockedActions, action)
-			}
-		}
-	}
-	actions = UpdateProcessedActions(actions, blockedActions, true)
-	return actions
-}
-
-func KingsDrabSteal(actions TurnActions, players []models.PlayerTurn) TurnActions {
-	for i, player := range players {
+func KingsDrabSteal(actions turn.Actions, players []player.Turn) turn.Actions {
+	for _, player := range players {
 		if player.Status.Lodging == lodging.KingsDrab {
 			if len(player.Status.Items) > 0 && rand.Float64() < 0.05 {
 				// Check for bodyguard (prevents stealing)
@@ -308,19 +205,19 @@ func KingsDrabSteal(actions TurnActions, players []models.PlayerTurn) TurnAction
 
 				item := player.Status.Items[selection]
 
-				if item.Type == models.Tenaculum {
+				if item.Type == items.Tenaculum {
 					// Check if action in actions
-				} else if item.Type == models.PlumBob {
+				} else if item.Type == items.PlumBob {
 					// Check if action in actions
-				} else if item.Type == models.BoneTar {
+				} else if item.Type == items.BoneTar {
 					// Check if action in actions
-				} else if item.Type == models.Nahlrout {
+				} else if item.Type == items.Nahlrout {
 					// Check if action in actions
-				} else if item.Type == models.ThievesLamp {
+				} else if item.Type == items.ThievesLamp {
 					// Check if action in actions
-				} else if item.Type == models.Ward {
+				} else if item.Type == items.Ward {
 					// Check if action in actions
-				} else if item.Type == models.Mommet {
+				} else if item.Type == items.Mommet {
 					// Check if action in actions
 				}
 			}
@@ -329,12 +226,13 @@ func KingsDrabSteal(actions TurnActions, players []models.PlayerTurn) TurnAction
 	return actions
 }
 
-func LawOfContrapositionAction(actions TurnActions, turns []models.PlayerTurn) TurnActions {
-	processedActions := []models.Action{}
-	for i, action := range actions.Unprocessed {
-		if action.Type == models.LawOfContraposition {
+// [BUG] Cannot redirect mommets
+func LawOfContrapositionAction(actions turn.Actions, turns []player.Turn) turn.Actions {
+	processedActions := []player.Action{}
+	for _, action := range actions.Unprocessed {
+		if action.Type == player.LawOfContraposition {
 			// Range through targets actions
-			for j, targetAction := range actions.Unprocessed {
+			for _, targetAction := range actions.Unprocessed {
 				// [BUG] What happens if the target has multiple actions of the same type?
 				if targetAction.Actor == action.Target && targetAction.Type == action.TargetType {
 					targetAction.Target = action.Target2
@@ -344,19 +242,6 @@ func LawOfContrapositionAction(actions TurnActions, turns []models.PlayerTurn) T
 			}
 		}
 	}
-	actions = UpdateProcessedActions(actions, processedActions, false)
+	actions = turn.UpdateProcessedActions(actions, processedActions, false)
 	return actions
-}
-
-func ApplyRoleblocks(actions TurnActions) {
-	// Need to be aware of block loops
-	for i, action := range actions.Unprocessed {
-
-	}
-}
-
-type TurnActions struct {
-	Unprocessed []models.Action
-	Applied     []models.Action
-	Blocked     []models.Action
 }
