@@ -99,7 +99,9 @@ func newTurn(game models.Game, term, month int32) (models.GameTurn, error) {
 
 	// players, err := cfg.db.GetPlayers(context.Background(), game.ID)
 	players := []models.Player{}
-	playerTurns := getPlayerTurns()
+	// playerTurns := getPlayerTurns()
+	playerTurns := []models.PlayerTurn{}
+	actions := TurnActions{}
 
 	// Passive Protects
 	// - Horse & Four: 50% chance of sabotage or kill failing
@@ -120,15 +122,15 @@ func newTurn(game models.Game, term, month int32) (models.GameTurn, error) {
 	// - medica emergency
 	//
 	//
-	ApplyPassiveRoleblocks(actions, players)
+	actions = ApplyPassiveRoleblocks(actions, playerTurns)
 
-	KingsDrabSteal(players)
+	actions = KingsDrabSteal(actions, playerTurns)
 
-	// Mommets
+	// [IGNORE] Mommets
 
-	LawOfContrapositionAction(actions, player)
+	actions = LawOfContrapositionAction(actions, playerTurns)
 
-	// L3-4 Malfeasance Protection should probably be checked for upon processing action?
+	// [IGNORE] L3-4 Malfeasance Protection should probably be checked for upon processing action?
 
 	// Apply roleblocks (including item theft/destruction)
 
@@ -186,16 +188,31 @@ func playerEP(game models.Game, player models.Player, ep [9]int32) {
 
 }
 
+func UpdateProcessedActions(actions TurnActions, processedActions []models.Action, blocked bool) TurnActions {
+	// Added processedActions to actions.Processed
+	if blocked {
+		actions.Blocked = append(actions.Blocked, processedActions...)
+	} else {
+		actions.Applied = append(actions.Applied, processedActions...)
+	}
+
+	// Delete processedActions from actions.Unprocessed
+	actions.Unprocessed = slices.DeleteFunc(actions.Unprocessed, func(action models.Action) bool {
+		return slices.Contains(processedActions, action)
+	})
+
+	return actions
+}
+
 // All actions targetting a player on the streets need to check if they are on the streets
 func ApplyPassiveRoleblocks(actions TurnActions, turns []models.PlayerTurn) TurnActions {
-	var blockedActions []int
+	var blockedActions []models.Action
 	for _, player := range turns {
 		if player.Player.Class == models.VintishNoble {
 			if rand.Float64() < 0.25 {
 				// blocked
 				for _, action := range player.Actions.Actions {
-					blockedActions = append(blockedActions, action.ID)
-					actions.Blocked = append(actions.Blocked, action)
+					blockedActions = append(blockedActions, action)
 				}
 				// protected
 
@@ -205,8 +222,7 @@ func ApplyPassiveRoleblocks(actions TurnActions, turns []models.PlayerTurn) Turn
 			if rand.Float64() < 0.1 {
 				// blocked
 				for _, action := range player.Actions.Actions {
-					blockedActions = append(blockedActions, action.ID)
-					actions.Blocked = append(actions.Blocked, action)
+					blockedActions = append(blockedActions, action)
 				}
 				// protected
 				continue
@@ -219,8 +235,7 @@ func ApplyPassiveRoleblocks(actions TurnActions, turns []models.PlayerTurn) Turn
 			for _, action := range player.Actions.Actions {
 				if rand.Float64() < 0.5 {
 					// action fails
-					blockedActions = append(blockedActions, action.ID)
-					actions.Blocked = append(actions.Blocked, action)
+					blockedActions = append(blockedActions, action)
 				}
 			}
 		} else if player.Status.Lodging == lodging.Ankers {
@@ -229,7 +244,7 @@ func ApplyPassiveRoleblocks(actions TurnActions, turns []models.PlayerTurn) Turn
 				// get collection of all of that players actions and choose one to remove
 				count := 0
 				for _, action := range player.Actions.Actions {
-					if slices.Contains(blockedActions, action.ID) == false {
+					if slices.Contains(blockedActions, action) == false {
 						count += 1
 					}
 				}
@@ -237,12 +252,11 @@ func ApplyPassiveRoleblocks(actions TurnActions, turns []models.PlayerTurn) Turn
 					count = 0
 					selection := rand.Intn(count)
 					for _, action := range player.Actions.Actions {
-						if slices.Contains(blockedActions, action.ID) {
+						if slices.Contains(blockedActions, action) {
 							continue
 						}
 						if count == selection {
-							blockedActions = append(blockedActions, action.ID)
-							actions.Blocked = append(actions.Blocked, action)
+							blockedActions = append(blockedActions, action)
 						} else {
 							count++
 						}
@@ -255,8 +269,7 @@ func ApplyPassiveRoleblocks(actions TurnActions, turns []models.PlayerTurn) Turn
 			// Remove all actions
 			for _, action := range player.Actions.Actions {
 				// action fails
-				blockedActions = append(blockedActions, action.ID)
-				actions.Blocked = append(actions.Blocked, action)
+				blockedActions = append(blockedActions, action)
 			}
 			// Set new Lashed count to Lashed-1
 		}
@@ -266,8 +279,7 @@ func ApplyPassiveRoleblocks(actions TurnActions, turns []models.PlayerTurn) Turn
 			// Remove all actions,
 			for _, action := range player.Actions.Actions {
 				// action fails
-				blockedActions = append(blockedActions, action.ID)
-				actions.Blocked = append(actions.Blocked, action)
+				blockedActions = append(blockedActions, action)
 			}
 			// Set next turn status not in medica?
 		}
@@ -277,39 +289,63 @@ func ApplyPassiveRoleblocks(actions TurnActions, turns []models.PlayerTurn) Turn
 			//   period. Needs to be validated prior to these checks.
 			for _, action := range player.Actions.Actions {
 				// action fails
-				blockedActions = append(blockedActions, action.ID)
-				actions.Blocked = append(actions.Blocked, action)
+				blockedActions = append(blockedActions, action)
 			}
 		}
 	}
-	actions.Unprocessed = slices.DeleteFunc(actions.Unprocessed, func(action models.Action) bool {
-		return slices.Contains(blockedActions, action.ID)
-	})
+	actions = UpdateProcessedActions(actions, blockedActions, true)
 	return actions
 }
 
-func KingsDrabSteal(players []models.PlayerTurn) {
+func KingsDrabSteal(actions TurnActions, players []models.PlayerTurn) TurnActions {
 	for i, player := range players {
 		if player.Status.Lodging == lodging.KingsDrab {
 			if len(player.Status.Items) > 0 && rand.Float64() < 0.05 {
+				// Check for bodyguard (prevents stealing)
+
 				// Remove random item
-				// Check for things that prevent stealing?
-				// Check if item had associated action
+				selection := rand.Intn(len(player.Status.Items))
+
+				item := player.Status.Items[selection]
+
+				if item.Type == models.Tenaculum {
+					// Check if action in actions
+				} else if item.Type == models.PlumBob {
+					// Check if action in actions
+				} else if item.Type == models.BoneTar {
+					// Check if action in actions
+				} else if item.Type == models.Nahlrout {
+					// Check if action in actions
+				} else if item.Type == models.ThievesLamp {
+					// Check if action in actions
+				} else if item.Type == models.Ward {
+					// Check if action in actions
+				} else if item.Type == models.Mommet {
+					// Check if action in actions
+				}
 			}
 		}
 	}
+	return actions
 }
 
-func LawOfContrapositionAction(actions TurnActions, turns []models.PlayerTurn) {
+func LawOfContrapositionAction(actions TurnActions, turns []models.PlayerTurn) TurnActions {
+	processedActions := []models.Action{}
 	for i, action := range actions.Unprocessed {
 		if action.Type == models.LawOfContraposition {
 			// Range through targets actions
-			for {
-				// Check if actiontype matches action.TargetType
-				// Change actions target to action.Target2
+			for j, targetAction := range actions.Unprocessed {
+				// [BUG] What happens if the target has multiple actions of the same type?
+				if targetAction.Actor == action.Target && targetAction.Type == action.TargetType {
+					targetAction.Target = action.Target2
+					processedActions = append(processedActions, action)
+					break
+				}
 			}
 		}
 	}
+	actions = UpdateProcessedActions(actions, processedActions, false)
+	return actions
 }
 
 func ApplyRoleblocks(actions TurnActions) {
