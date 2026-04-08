@@ -273,6 +273,7 @@ func applyThievesLamp(actions Actions, turns map[player.PlayerID]player.Turn) Ac
 
 		// Steal items
 		// check if bodyguard?
+
 		// BUG: Are there unstealable items?
 		// Ensure items that have been used before this step are properly removed/used
 		itemsStolen := len(target.Status.Items)
@@ -332,6 +333,29 @@ func applyNahlrout(actions Actions) Actions {
 		// Cleanup exhausted item?
 	}
 	actions = UpdateProcessedActions(actions, processedActions)
+	actions = UpdateBlockedActions(actions, blockedActions)
+	return actions
+}
+
+func KingsDrabSteal(actions Actions, players []player.Turn) Actions {
+	blockedActions := []player.Action{}
+	for _, player := range players {
+		if player.Status.Lodging == lodging.KingsDrab {
+			if len(player.Status.Items) > 0 && rand.Float64() < 0.05 {
+				// Check for bodyguard (prevents stealing)
+
+				// Remove random item
+				stolenItem, blockedItemActions := StealRandomItem(nil, player, actions)
+
+				// Remove item from target
+				slices.DeleteFunc(player.Status.Items, func(item *items.Item) bool {
+					return item == stolenItem // Does this compare references or values?
+				})
+				// Remove any actions from target blocked as a result of the stolen item
+				blockedActions = append(blockedActions, blockedItemActions...)
+			}
+		}
+	}
 	actions = UpdateBlockedActions(actions, blockedActions)
 	return actions
 }

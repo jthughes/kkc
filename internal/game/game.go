@@ -3,7 +3,6 @@ package game
 import (
 	"math/rand"
 
-	"github.com/jthughes/kkc/internal/game/items"
 	"github.com/jthughes/kkc/internal/game/lodging"
 	"github.com/jthughes/kkc/internal/game/player"
 	gamestate "github.com/jthughes/kkc/internal/game/state"
@@ -129,7 +128,7 @@ func newTurn(game gamestate.Game, term, month int32) (gamestate.GameTurn, error)
 	//
 	actions = turn.ApplyPassiveRoleblocks(actions, playerTurns)
 
-	actions = KingsDrabSteal(actions, playerTurns)
+	actions = turn.KingsDrabSteal(actions, playerTurns)
 
 	// [IGNORE] Mommets
 
@@ -140,7 +139,9 @@ func newTurn(game gamestate.Game, term, month int32) (gamestate.GameTurn, error)
 	// Apply roleblocks (including item theft/destruction)
 	actions = turn.ApplyActiveRoleblocks(actions, playerTurns)
 
-	// Apply non-ofense actions + process Imre
+	// Apply non-offensive actions + process Imre
+	actions = ApplyNonOffensiveActions(actions, playerTurns)
+	// actions = turn.ProcessImre()
 
 	// Horns
 	// Complaints
@@ -162,7 +163,7 @@ func newTurn(game gamestate.Game, term, month int32) (gamestate.GameTurn, error)
 	// Filing new EP
 	//  - Allow +1 EP if at Windy Tower (is there better place for this validation?)
 
-	// Check for crocker breakouts
+	// Check for crockery breakouts
 
 	// Apply offensive actions
 
@@ -194,38 +195,6 @@ func playerEP(game gamestate.Game, player player.Player, ep [9]int32) {
 
 }
 
-func KingsDrabSteal(actions turn.Actions, players []player.Turn) turn.Actions {
-	for _, player := range players {
-		if player.Status.Lodging == lodging.KingsDrab {
-			if len(player.Status.Items) > 0 && rand.Float64() < 0.05 {
-				// Check for bodyguard (prevents stealing)
-
-				// Remove random item
-				selection := rand.Intn(len(player.Status.Items))
-
-				item := player.Status.Items[selection]
-
-				if item.Type == items.Tenaculum {
-					// Check if action in actions
-				} else if item.Type == items.PlumBob {
-					// Check if action in actions
-				} else if item.Type == items.BoneTar {
-					// Check if action in actions
-				} else if item.Type == items.Nahlrout {
-					// Check if action in actions
-				} else if item.Type == items.ThievesLamp {
-					// Check if action in actions
-				} else if item.Type == items.Ward {
-					// Check if action in actions
-				} else if item.Type == items.Mommet {
-					// Check if action in actions
-				}
-			}
-		}
-	}
-	return actions
-}
-
 // [BUG] Cannot redirect mommets
 func LawOfContrapositionAction(actions turn.Actions, turns []player.Turn) turn.Actions {
 	processedActions := []player.Action{}
@@ -244,4 +213,54 @@ func LawOfContrapositionAction(actions turn.Actions, turns []player.Turn) turn.A
 	}
 	actions = turn.UpdateProcessedActions(actions, processedActions)
 	return actions
+}
+
+func ApplyNonOffensiveActions(actions turn.Actions, playerTurns []player.Turn) turn.Actions {
+	// Linguisitics (Not Implemented)
+	// - Mysterious Bulletins (anonymous writeup messsages)
+	// - Bribe the Messenger (PM spy)
+	// - Linguistic Analysis (Ask GM if player lied)
+
+	// Arithmetics
+	// - Pickpocket (steal coin from random player targetting you, or from a  target if Master)
+	//   - Could track targets, but can probably just search actions.
+	//   - Can you pickpocket an untargeted player roleblocking you?
+
+	// Rhetoric & Logic
+	// - Argumentum Ad Nauseam (vote cancel) - Part of Horns?
+	// - Proficient and Hyperbole (extra votes) - Part of Horns?
+	// - Persuasive Arguments (vote change) - Part of Horns?
+
+	// Archives (Not Implemented)
+	// - Omen Recognition (Detect Skindancer actions)
+	// - School Records (Find out info on players)
+	// - Banned Books (Learn abilities from other fields)
+
+	// Sympathy (Not Implemented)
+	// - Mommet-Making
+
+	// Physicking
+	// - Medica Emergency (Immunity next turn)
+	// - Psycological Counselling (Reduce targfets IP)
+	// - Cheating Death (Sabotage/Kill protection)
+
+	// Alchemy (Not Implemented)
+	// - Make Item
+
+	// Artificery
+	// - Make Item
+
+	// Naming (Not Implemented)
+	// - ???
+
+	// Items
+	// - Plum bob (Interrogate player) [Not Implemented]
+	// - Bone-tar (Destroy lodging) [Not Implemented]
+	// - Ward (Detect action targetting you)
+
+	return actions
+}
+
+func ApplyImre() {
+
 }
