@@ -242,6 +242,6 @@ func LawOfContrapositionAction(actions turn.Actions, turns []player.Turn) turn.A
 			}
 		}
 	}
-	actions = turn.UpdateProcessedActions(actions, processedActions, false)
+	actions = turn.UpdateProcessedActions(actions, processedActions)
 	return actions
 }

@@ -4,6 +4,7 @@ import (
 	"math/rand"
 	"slices"
 
+	"github.com/jthughes/kkc/internal/game/items"
 	"github.com/jthughes/kkc/internal/game/lodging"
 	"github.com/jthughes/kkc/internal/game/player"
 )
@@ -14,13 +15,19 @@ type Actions struct {
 	Blocked     []player.Action
 }
 
-func UpdateProcessedActions(actions Actions, processedActions []player.Action, blocked bool) Actions {
-	// Added processedActions to actions.Processed
-	if blocked {
-		actions.Blocked = append(actions.Blocked, processedActions...)
-	} else {
-		actions.Applied = append(actions.Applied, processedActions...)
-	}
+func UpdateBlockedActions(actions Actions, blockedActions []player.Action) Actions {
+	actions.Blocked = append(actions.Blocked, blockedActions...)
+
+	// Delete processedActions from actions.Unprocessed
+	actions.Unprocessed = slices.DeleteFunc(actions.Unprocessed, func(action player.Action) bool {
+		return slices.Contains(blockedActions, action)
+	})
+
+	return actions
+}
+
+func UpdateProcessedActions(actions Actions, processedActions []player.Action) Actions {
+	actions.Applied = append(actions.Applied, processedActions...)
 
 	// Delete processedActions from actions.Unprocessed
 	actions.Unprocessed = slices.DeleteFunc(actions.Unprocessed, func(action player.Action) bool {
@@ -119,7 +126,7 @@ func ApplyPassiveRoleblocks(actions Actions, turns []player.Turn) Actions {
 			}
 		}
 	}
-	actions = UpdateProcessedActions(actions, blockedActions, true)
+	actions = UpdateBlockedActions(actions, blockedActions)
 	return actions
 }
 
@@ -140,6 +147,7 @@ func ApplyPassiveRoleblocks(actions Actions, turns []player.Turn) Actions {
 // Priority:
 //  1. Mommet (Rules already give this top priority (only blockable by passives))
 //  2. Medica Detainment
+//     ?. Malfeasance Protection, Fae Lore
 //  3. Thieves Lamp (Re'lar)
 //  4. Tenaculum (E'lir)
 //  5. Nalhrout (Purchaseable)
@@ -149,28 +157,181 @@ func ApplyActiveRoleblocks(actions Actions, turns []player.Turn) Actions {
 	actions = applyMedicaDetainment(actions, turns)
 	actions = applyThievesLamp(actions, turns)
 	// actions = applyTenaculum(actions, turns)
-	actions = applyNahlrout(actions, turns)
+	actions = applyNahlrout(actions)
 	return actions
 }
 
 func applyMedicaDetainment(actions Actions, turns []player.Turn) Actions {
+	processedActions := []player.Action{}
+	blockedActions := []player.Action{}
 	for _, action := range actions.Unprocessed {
+		if action.Type != player.MedicaDetainment {
+			continue
+		}
+		// Mark action as processed
+		processedActions = append(processedActions, action)
+
+		// Mark any actions taken by target as blocked
+		for _, targetAction := range actions.Unprocessed {
+			if targetAction.Actor != action.Target {
+				continue
+			}
+			// Skip actions with same priority
+			if targetAction.Type == player.MedicaDetainment {
+				continue
+			}
+			// Add action to blocked list
+			blockedActions = append(blockedActions, targetAction)
+		}
+
+		// Determine consequences
+		switch action.Actor.Elevations.GetPhysickingStrength() {
+		case 1:
+			if rand.Float64() < 0.3 {
+				// Apply Conduct Unbecoming (Lashings)
+			}
+		case 2:
+			if rand.Float64() < 0.2 {
+				// Apply Conduct Unbecoming (Lashings)
+			}
+		case 3:
+			if rand.Float64() < 0.1 {
+				// Apply Conduct Unbecoming (Lashings)
+			}
+		case 4:
+			// Do nothing, you cannot fail
+		default:
+			// Error (shouldn't be able to use this ability without a physicking elevation?
+		}
 
 	}
+	actions = UpdateProcessedActions(actions, processedActions)
+	actions = UpdateBlockedActions(actions, blockedActions)
 	return actions
 }
 
-func applyThievesLamp(actions Actions, turns []player.Turn) Actions {
+// Remove random item from target player, returning copy of item
+// Presently Talent Pipes is not being stored in inventory and so is not checked for
+func StealRandomItem(sourceAction *player.Action, target player.Turn, actions Actions) (stolenItem *items.Item, blockedActions []player.Action) {
+	// Select item to steal
+	selection := rand.Intn(len(target.Status.Items))
+	stolenItem = target.Status.Items[selection]
+
+	// Remove unapplied actions
+	// NOTE: cannot block item action of same kind, as items are used simultaneously
+	blockedActions = []player.Action{}
+	if slices.Contains(items.ItemsWithAction, stolenItem.Type) {
+		for _, action := range actions.Unprocessed {
+			// If target does not match
+			if action.Actor.ID != target.Player.ID {
+				continue
+			}
+			// If player action is causing the steal, does not block the same type of action
+			if sourceAction != nil && action.Type == sourceAction.Type {
+				// Possibly this is the place to decrement the item usage when stolen?
+				// Possibly need the action to link to the item it's being used from
+				// Items possibly need to be shared pointers?
+				continue
+			}
+			// Continue searching if action does not come from the stolen item
+			if action.Type != player.ItemActions[stolenItem.Type] {
+				continue
+			}
+			// Remove action
+			// BUG: Can you hold multiple of the same item and use multiple actions?
+			blockedActions = append(blockedActions, action)
+		}
+	}
+
+	return stolenItem, blockedActions
+}
+
+func applyThievesLamp(actions Actions, turns map[player.PlayerID]player.Turn) Actions {
 	// Thieves lamp needs to check for bodyguards
+	processedActions := []player.Action{}
+	blockedActions := []player.Action{}
 	for _, action := range actions.Unprocessed {
+		if action.Type != player.UseThievesLamp {
+			continue
+		}
+		// Mark action as processed
+		processedActions = append(processedActions, action)
 
+		actor, ok := turns[action.Actor.ID]
+		if ok == false {
+			// error
+		}
+		target, ok := turns[action.Target.ID]
+		if ok == false {
+			// error
+		}
+
+		// Steal money
+		stolenCoin := target.Status.Coin * 0.3
+		target.Status.Coin -= stolenCoin
+		actor.Status.Coin += stolenCoin
+
+		// Steal items
+		// check if bodyguard?
+		// BUG: Are there unstealable items?
+		// Ensure items that have been used before this step are properly removed/used
+		itemsStolen := len(target.Status.Items)
+		if itemsStolen > 1 {
+			itemsStolen /= 2
+		}
+
+		// BUG: Likely problem with use count of stolen items, think more about when testing
+		for _ = range itemsStolen {
+			// Get stolen item
+			stolenItem, blockedItemActions := StealRandomItem(&action, target, actions)
+			actor.Status.Items = append(actor.Status.Items, stolenItem)
+
+			// Remove item from target
+			slices.DeleteFunc(target.Status.Items, func(item *items.Item) bool {
+				return item == stolenItem // Does this compare references or values?
+			})
+			// Remove any actions from target blocked as a result of the stolen item
+			blockedActions = append(blockedActions, blockedItemActions...)
+		}
+
+		// Reduce uses
+		action.Item.Uses -= 1
+		// Remove item when empty?
 	}
+	actions = UpdateProcessedActions(actions, processedActions)
+	actions = UpdateBlockedActions(actions, blockedActions)
 	return actions
 }
 
-func applyNahlrout(actions Actions, turns []player.Turn) Actions {
+func applyNahlrout(actions Actions) Actions {
+	processedActions := []player.Action{}
+	blockedActions := []player.Action{}
 	for _, action := range actions.Unprocessed {
+		if action.Type != player.UseNahlrout {
+			continue
+		}
+		// Mark action as processed
+		processedActions = append(processedActions, action)
 
+		// Find all actions taken by target
+		targetActions := []player.Action{}
+		for _, targetAction := range actions.Unprocessed {
+			if targetAction.Actor == action.Target {
+				if targetAction.Type == player.UseNahlrout {
+					// Cannot block action on same prioriity
+					continue
+				}
+				targetActions = append(targetActions, targetAction)
+			}
+		}
+
+		selection := rand.Intn(len(targetActions))
+		blockedActions = append(blockedActions, targetActions[selection])
+
+		action.Item.Uses -= 1
+		// Cleanup exhausted item?
 	}
+	actions = UpdateProcessedActions(actions, processedActions)
+	actions = UpdateBlockedActions(actions, blockedActions)
 	return actions
 }

@@ -15,6 +15,16 @@ const (
 	Mommet
 )
 
+var ItemsWithAction []ItemType = []ItemType{
+	Tenaculum,
+	PlumBob,
+	BoneTar,
+	Nahlrout,
+	ThievesLamp,
+	Ward,
+	Mommet,
+}
+
 type Item struct {
 	Type ItemType
 	Uses int

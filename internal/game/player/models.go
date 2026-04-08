@@ -17,7 +17,12 @@ type Player struct {
 	Alive      bool
 	Skindancer bool
 	Rank       Rank
+	Elevations Elevations
 	Class      Class
+}
+
+type Elevations struct {
+	Elevations map[Rank]gamestate.Field
 }
 
 type Turn struct {
@@ -46,7 +51,7 @@ type Status struct {
 
 	Coin            float32
 	ElevationPoints [9]int
-	Items           []items.Item
+	Items           []*items.Item
 }
 
 type Actions struct {
@@ -72,4 +77,5 @@ type Action struct {
 	Target     *Player
 	Target2    *Player
 	TargetType ActionType
+	Item       *items.Item
 }
