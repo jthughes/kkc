@@ -8,7 +8,7 @@ import (
 	gamestate "github.com/jthughes/kkc/internal/game/state"
 )
 
-func getPlayerElevations(playerTurns []player.Turn) map[player.PlayerID]gamestate.Field {
+func getPlayerElevations(playerTurns map[player.PlayerID]player.Turn) map[player.PlayerID]gamestate.Field {
 	// Initialise master elevation pools
 	mastersAbleToElevate := map[gamestate.Field]map[player.PlayerID]int{}
 
@@ -85,7 +85,7 @@ func getPlayerElevations(playerTurns []player.Turn) map[player.PlayerID]gamestat
 	return finalElevations
 }
 
-func Elevations(playerTurns []player.Turn) {
+func ApplyElevations(playerTurns map[player.PlayerID]player.Turn) {
 	// Need a list/map per models.Field to populate with all
 
 	// Account for Aturan noble backing out of elevation?

@@ -107,7 +107,7 @@ func helper(playerTurns []player.Turn) map[player.PlayerID]gamestate.Field {
 // Consequences
 //
 
-func horns(playerTurns map[player.PlayerID]player.Turn) {
+func ApplyHorns(playerTurns map[player.PlayerID]player.Turn) {
 	// Gather list of all filed complaints
 
 	// Remove disqualified complaints
@@ -156,12 +156,81 @@ func horns(playerTurns map[player.PlayerID]player.Turn) {
 	dpReceived := assignDP(playerTurns, complaintsReceived, 4)
 
 	// Determine punishments
+	assignPunishment(dpReceived, playerTurns)
+}
+
+func assignPunishment(dpReceived map[player.PlayerID]int, playerTurns map[player.PlayerID]player.Turn) {
+	// Lower bound maps to chance of [ChargesDropped, UndignifiedMischief, RecklessUse, ConductUnbecomingLashing, ConductUnbecomingExpulsion]
+	punishmentTable := map[int][5]float64{
+		3:  {0.60, 0.30, 0.10, 0.00, 0.00},
+		5:  {0.20, 0.30, 0.30, 0.20, 0.00},
+		8:  {0.00, 0.20, 0.20, 0.50, 0.10},
+		11: {0.00, 0.10, 0.20, 0.40, 0.30},
+		13: {0.00, 0.05, 0.05, 0.25, 0.65},
+		15: {0.00, 0.00, 0.00, 0.20, 0.80},
+		17: {0.00, 0.00, 0.00, 0.10, 0.90},
+		18: {0.00, 0.00, 0.00, 0.00, 1.00},
+	}
+
 	for player, dp := range dpReceived {
 		if dp >= 3 {
 			fmt.Printf("%s was brought on the Horns", playerTurns[player].Player.Name)
 		}
-	}
+		level := dp
+		punishmentOdds, ok := punishmentTable[level]
+		for level > 0 {
+			if ok {
+				break
+			}
+			level -= 1
+			punishmentOdds, ok = punishmentTable[level]
+		}
+		if !ok {
+			// Did not receive punishment
+			continue
+		}
 
+		// Determine punishment
+		selection := rand.Float64()
+		cumulativeOdds := 0.0
+		assignedCharge := ChargesDropped
+		for charge, odds := range punishmentOdds {
+			cumulativeOdds += odds
+			if selection <= cumulativeOdds {
+				assignedCharge = Charge(charge)
+				break
+			}
+		}
+		assignedPunishment, ok := PunishmentForCharge[assignedCharge]
+		if !ok {
+			// error
+		}
+
+		student, ok := playerTurns[player]
+		if !ok {
+			// error
+		}
+
+		// Apply punishment
+		switch assignedPunishment {
+		case Expulsion:
+			student.Status.Expelled = true
+		case PublicLashing:
+			switch assignedCharge {
+			case RecklessUseOfSympathy:
+				student.Status.Lashed += 1
+			case ConductUnbecomingLashing:
+				student.Status.Lashed += 3
+			}
+		case FormalApology:
+			// This needs to be checked prior to this?
+			student.Status.ApologyRequired = true
+		case None:
+			// Nothing happens
+		default:
+			// Should not reach here
+		}
+	}
 }
 
 // Will need to allow for PC masters

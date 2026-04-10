@@ -32,9 +32,14 @@ type Turn struct {
 }
 
 type MedicaStatus struct {
-	Firestop   bool
-	Emergency  bool
-	Detainment bool
+	Firestop   bool // In Medica this turn as a result of Firestop explosion last turn
+	Emergency  MedicaEmergencyStatus
+	Detainment bool // In Medica this turn as a result of being Detained this turn
+}
+
+type MedicaEmergencyStatus struct {
+	Current   bool // In Medica this turn as a result of Medica Emergency last turn
+	Impending bool // In Medica next turn as a result of Medica Emergency this turn
 }
 
 type Status struct {
@@ -42,8 +47,11 @@ type Status struct {
 	Sane     bool
 	Expelled bool
 	Crockery bool
-	Medica   MedicaStatus
-	Lashed   int
+
+	ApologyRequired bool
+	Lashed          int
+	Medica          MedicaStatus
+	InsanityPoints  int
 
 	Lodging    lodging.Lodging
 	Imre       bool

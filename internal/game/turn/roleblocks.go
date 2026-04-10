@@ -38,7 +38,7 @@ func UpdateProcessedActions(actions Actions, processedActions []player.Action) A
 }
 
 // All actions targetting a player on the streets need to check if they are on the streets
-func ApplyPassiveRoleblocks(actions Actions, turns []player.Turn) Actions {
+func ApplyPassiveRoleblocks(actions Actions, turns map[player.PlayerID]player.Turn) Actions {
 	var blockedActions []player.Action
 	for _, playerTurn := range turns {
 		if playerTurn.Player.Class == player.VintishNoble {
@@ -116,7 +116,7 @@ func ApplyPassiveRoleblocks(actions Actions, turns []player.Turn) Actions {
 			}
 			// Set next turn status not in medica?
 		}
-		if playerTurn.Status.Medica.Emergency {
+		if playerTurn.Status.Medica.Emergency.Current {
 			// Check if master to allow physicker actions
 			// - Need system/labels for action periods that determines which action is using what
 			//   period. Needs to be validated prior to these checks.
@@ -152,7 +152,7 @@ func ApplyPassiveRoleblocks(actions Actions, turns []player.Turn) Actions {
 //  4. Tenaculum (E'lir)
 //  5. Nalhrout (Purchaseable)
 //     i.e. Thieves Lamp has higher priority than Nahlrout + Tenaculum, Medica Detainment has higher priorty than
-func ApplyActiveRoleblocks(actions Actions, turns []player.Turn) Actions {
+func ApplyActiveRoleblocks(actions Actions, turns map[player.PlayerID]player.Turn) Actions {
 	// actions = applyMommet(actions, turns)
 	actions = applyMedicaDetainment(actions, turns)
 	actions = applyThievesLamp(actions, turns)
@@ -161,7 +161,7 @@ func ApplyActiveRoleblocks(actions Actions, turns []player.Turn) Actions {
 	return actions
 }
 
-func applyMedicaDetainment(actions Actions, turns []player.Turn) Actions {
+func applyMedicaDetainment(actions Actions, turns map[player.PlayerID]player.Turn) Actions {
 	processedActions := []player.Action{}
 	blockedActions := []player.Action{}
 	for _, action := range actions.Unprocessed {
@@ -288,7 +288,7 @@ func applyThievesLamp(actions Actions, turns map[player.PlayerID]player.Turn) Ac
 			actor.Status.Items = append(actor.Status.Items, stolenItem)
 
 			// Remove item from target
-			slices.DeleteFunc(target.Status.Items, func(item *items.Item) bool {
+			target.Status.Items = slices.DeleteFunc(target.Status.Items, func(item *items.Item) bool {
 				return item == stolenItem // Does this compare references or values?
 			})
 			// Remove any actions from target blocked as a result of the stolen item
@@ -337,7 +337,7 @@ func applyNahlrout(actions Actions) Actions {
 	return actions
 }
 
-func KingsDrabSteal(actions Actions, players []player.Turn) Actions {
+func KingsDrabSteal(actions Actions, players map[player.PlayerID]player.Turn) Actions {
 	blockedActions := []player.Action{}
 	for _, player := range players {
 		if player.Status.Lodging == lodging.KingsDrab {
@@ -348,7 +348,7 @@ func KingsDrabSteal(actions Actions, players []player.Turn) Actions {
 				stolenItem, blockedItemActions := StealRandomItem(nil, player, actions)
 
 				// Remove item from target
-				slices.DeleteFunc(player.Status.Items, func(item *items.Item) bool {
+				player.Status.Items = slices.DeleteFunc(player.Status.Items, func(item *items.Item) bool {
 					return item == stolenItem // Does this compare references or values?
 				})
 				// Remove any actions from target blocked as a result of the stolen item

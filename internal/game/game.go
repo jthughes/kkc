@@ -74,8 +74,11 @@ func startGame(game gamestate.Game) error {
 				Expelled: false,
 				Crockery: false,
 				Medica: player.MedicaStatus{
-					Firestop:   false,
-					Emergency:  false,
+					Firestop: false,
+					Emergency: player.MedicaEmergencyStatus{
+						Current:   false,
+						Impending: false,
+					},
 					Detainment: false,
 				},
 
@@ -85,6 +88,7 @@ func startGame(game gamestate.Game) error {
 
 				Coin:            0,
 				ElevationPoints: EP,
+				InsanityPoints:  0,
 			},
 		}
 		if turn.Status.Alive {
@@ -102,9 +106,9 @@ func newTurn(game gamestate.Game, term, month int32) (gamestate.GameTurn, error)
 	// Assumption is baked in that any player alive at the start of a turn has a player_status entry, a player_turn entry, and an actions entry all initialied to default values when appropriate.
 
 	// players, err := cfg.db.GetPlayers(context.Background(), game.ID)
-	players := []player.Player{}
+
 	// playerTurns := getPlayerTurns()
-	playerTurns := []player.Turn{}
+	playerTurns := map[player.PlayerID]player.Turn{}
 	actions := turn.Actions{}
 
 	// Passive Protects
@@ -132,7 +136,7 @@ func newTurn(game gamestate.Game, term, month int32) (gamestate.GameTurn, error)
 
 	// [IGNORE] Mommets
 
-	actions = LawOfContrapositionAction(actions, playerTurns)
+	actions = applyRALLawOfContraposition(actions, playerTurns)
 
 	// [IGNORE] L3-4 Malfeasance Protection should probably be checked for upon processing action?
 
@@ -140,7 +144,7 @@ func newTurn(game gamestate.Game, term, month int32) (gamestate.GameTurn, error)
 	actions = turn.ApplyActiveRoleblocks(actions, playerTurns)
 
 	// Apply non-offensive actions + process Imre
-	actions = ApplyNonOffensiveActions(actions, playerTurns)
+	actions = turn.ApplyNonOffensiveActions(actions, playerTurns)
 	// actions = turn.ProcessImre()
 
 	// Horns
@@ -153,50 +157,45 @@ func newTurn(game gamestate.Game, term, month int32) (gamestate.GameTurn, error)
 	//  - The Golden Pony: -2 complaints
 	//
 	// Consequences
-	//
+	turn.ApplyHorns(playerTurns)
+
 	// Elevations
 	//  - Aturan Nobleman: 1/4 chance of refusing elevaation in Sympathy/Naming/Alchemy/Artificery
+	turn.ApplyElevations(playerTurns)
 
-	turn.Elevations(playerTurns)
-	// IP / EP offset
-	//
+	// IP / EP offset [Not Implemented]
+
 	// Filing new EP
 	//  - Allow +1 EP if at Windy Tower (is there better place for this validation?)
+	applyNewEP(playerTurns)
 
-	// Check for crockery breakouts
+	// Check for crockery breakouts [Not Implemented]
 
 	// Apply offensive actions
+	actions = turn.ApplyOffensiveActions(actions, playerTurns)
+
+	// Apply dection actions?
 
 	// If final month of term
-	// Stipend
-	//  - Vinitsh Nobleman: If expelled, drops to 20
-	//
-	// Admissions & Tuition
-	//  - Vintish Nobleman: Tuition is 1/3 higher after inflations/reductions
-	//
-	// Lodging
-	//  - Edema Ruh: Half price
-	//  - Vintish Nobleman: Must stay in either of the 2 most expensive able to be afforded
+	if month == 1 {
+		// Stipend
+		//  - Vinitsh Nobleman: If expelled, drops to 20
+		turn.ApplyStipend(playerTurns)
+		// Admissions & Tuition
+		//  - Vintish Nobleman: Tuition is 1/3 higher after inflations/reductions
+		turn.ApplyTuitionCosts(playerTurns)
 
-	for _, player := range players {
-		if player.Alive == false {
-			continue
-		}
-
+		// Lodging
+		//  - Edema Ruh: Half price
+		//  - Vintish Nobleman: Must stay in either of the 2 most expensive able to be afforded
+		turn.ApplyLodgingCosts(playerTurns)
 	}
+
 	return gamestate.GameTurn{}, nil
 }
 
-func playerComplaint(game gamestate.Game, player player.Player, targetID int32) {
-
-}
-
-func playerEP(game gamestate.Game, player player.Player, ep [9]int32) {
-
-}
-
 // [BUG] Cannot redirect mommets
-func LawOfContrapositionAction(actions turn.Actions, turns []player.Turn) turn.Actions {
+func applyRALLawOfContraposition(actions turn.Actions, turns map[player.PlayerID]player.Turn) turn.Actions {
 	processedActions := []player.Action{}
 	for _, action := range actions.Unprocessed {
 		if action.Type == player.LawOfContraposition {
@@ -215,52 +214,47 @@ func LawOfContrapositionAction(actions turn.Actions, turns []player.Turn) turn.A
 	return actions
 }
 
-func ApplyNonOffensiveActions(actions turn.Actions, playerTurns []player.Turn) turn.Actions {
-	// Linguisitics (Not Implemented)
-	// - Mysterious Bulletins (anonymous writeup messsages)
-	// - Bribe the Messenger (PM spy)
-	// - Linguistic Analysis (Ask GM if player lied)
+// As visiting Imre locations can be roleblocked, probably should appear as unprocessed actions.
+// This will ensure roleblocks work without need for context in Imre.
+// Main thing will be action period validation (when implemented)
+func ApplyImre() {
+	// The Eolian
+	// - Practice
+	// - Perform
 
-	// Arithmetics
-	// - Pickpocket (steal coin from random player targetting you, or from a  target if Master)
-	//   - Could track targets, but can probably just search actions.
-	//   - Can you pickpocket an untargeted player roleblocking you?
+	// Money Lenders [Not Impelemented]
+	// - Devi
+	// - Giles
 
-	// Rhetoric & Logic
-	// - Argumentum Ad Nauseam (vote cancel) - Part of Horns?
-	// - Proficient and Hyperbole (extra votes) - Part of Horns?
-	// - Persuasive Arguments (vote change) - Part of Horns?
+	// The Loaded Dice
+	// - Gamble
 
-	// Archives (Not Implemented)
-	// - Omen Recognition (Detect Skindancer actions)
-	// - School Records (Find out info on players)
-	// - Banned Books (Learn abilities from other fields)
+	// Nox's Apocathary
+	// - Purchase items
+	//   - Item limits not implemented
+	// -> Get Nahlrout item
+	// -> Send Courier
+	// -> Get Bloodless item
+	// -> Get Gram item
 
-	// Sympathy (Not Implemented)
-	// - Mommet-Making
+	// The Black Market
+	// - Acquire Devi mommets [Not Implemented]
+	// - Acquire bodyguards
+	// - Aquire Assassin
+	// - Contracts [Not Implemented]
 
-	// Physicking
-	// - Medica Emergency (Immunity next turn)
-	// - Psycological Counselling (Reduce targfets IP)
-	// - Cheating Death (Sabotage/Kill protection)
-
-	// Alchemy (Not Implemented)
-	// - Make Item
-
-	// Artificery
-	// - Make Item
-
-	// Naming (Not Implemented)
-	// - ???
-
-	// Items
-	// - Plum bob (Interrogate player) [Not Implemented]
-	// - Bone-tar (Destroy lodging) [Not Implemented]
-	// - Ward (Detect action targetting you)
-
-	return actions
 }
 
-func ApplyImre() {
+func applyNewEP(playerTurns map[player.PlayerID]player.Turn) {
+	for _, student := range playerTurns {
+		// Is validation done here or elsewhere for EP being filed?
+		if student.Player.Rank == player.Master {
+			// Newly elevated Master doesn't get to finish filing their EP
+			continue
+		}
 
+		for i, ep := range student.Actions.ElevationPoints {
+			student.Status.ElevationPoints[i] += ep
+		}
+	}
 }
