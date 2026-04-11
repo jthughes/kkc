@@ -53,6 +53,13 @@ func applyInsanityRoll(playerTurns map[player.PlayerID]player.Turn) {
 		if student.Status.Sane {
 			continue
 		}
+		switch student.Status.Lodging {
+		case lodging.SpindleAndDraft:
+			student.Status.InsanityPoints -= 2
+		case lodging.Mews:
+			student.Status.InsanityPoints += 2
+		}
+
 		insanityPoints := 1 + rand.Intn(10) + student.Status.InsanityPoints
 		if insanityPoints >= 12 {
 			student.Status.Sane = false
