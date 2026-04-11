@@ -28,7 +28,9 @@ func ApplyStipend(playerTurns map[player.PlayerID]player.Turn) {
 func ApplyTuitionCosts(playerTurns map[player.PlayerID]player.Turn) {
 	for _, student := range playerTurns {
 		tuitionCost := gamestate.SetCoin(10, 0)
-
+		if student.Player.Rank == player.Master {
+			tuitionCost.Subtract(5, 0)
+		}
 		// Reductions
 		if student.Status.Posts > 0 {
 			tuitionCost.Subtract(0, 50)
@@ -91,8 +93,10 @@ func ApplyTuitionCosts(playerTurns map[player.PlayerID]player.Turn) {
 			// No actions all term
 		}
 
-	}
+		// Check if able to afford tuition and apply consequences
+		// - Affects the state of Masters
 
+	}
 }
 
 // Lodging
@@ -104,9 +108,14 @@ func ApplyLodgingCosts(playerTurns map[player.PlayerID]player.Turn) {
 		if !ok {
 			// error
 		}
-		if student.Player.Class == player.EdemaRuh {
-			lodgingCost.Multiply(0.5)
+		discount := 0.0
+		if student.Player.Rank == player.Master {
+			discount += 0.25
 		}
+		if student.Player.Class == player.EdemaRuh {
+			discount += 0.5
+		}
+		lodgingCost.Multiply(float32(1.0 - discount))
 		for student.Status.Coin.LessThan(lodgingCost) {
 			index := slices.Index(lodging.NonImreLodging, student.Actions.Lodging) - 1
 			if index < 1 {
