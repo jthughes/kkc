@@ -57,9 +57,17 @@ type Status struct {
 	Imre       bool
 	University bool
 
-	Coin            float32
+	Coin            gamestate.Coin
 	ElevationPoints [9]int
 	Items           []*items.Item
+
+	Posts                int
+	QualityPosts         int
+	QualityPostsThisTerm int
+	QualityRP            int
+	PrivateMessages      int
+	FiledEP              bool // True if EP entered not canceled out?
+	FiledComplaint       bool // Check if Actions.Complaints knows whether all votes were cancelled
 }
 
 type Actions struct {

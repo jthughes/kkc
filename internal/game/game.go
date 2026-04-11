@@ -86,7 +86,7 @@ func startGame(game gamestate.Game) error {
 				Imre:       false,
 				University: true,
 
-				Coin:            0,
+				Coin:            gamestate.SetCoin(0, 0),
 				ElevationPoints: EP,
 				InsanityPoints:  0,
 			},

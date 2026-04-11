@@ -1,6 +1,9 @@
 package player
 
-import "github.com/jthughes/kkc/internal/game/items"
+import (
+	"github.com/jthughes/kkc/internal/game/items"
+	gamestate "github.com/jthughes/kkc/internal/game/state"
+)
 
 type Class int
 
@@ -18,6 +21,14 @@ var ClassName = map[Class]string{
 	YllishCommoner:   "Yllish Commoner",
 	AturanNoble:      "Aturan Noble",
 	VintishNoble:     "Vintish Noble",
+}
+
+var ClassStipend = map[Class]gamestate.Coin{
+	EdemaRuh:         gamestate.SetCoin(5, 67),
+	CealdishCommoner: gamestate.SetCoin(9, 87),
+	YllishCommoner:   gamestate.SetCoin(11, 23),
+	AturanNoble:      gamestate.SetCoin(20, 0),
+	VintishNoble:     gamestate.SetCoin(30, 0),
 }
 
 type Rank int

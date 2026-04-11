@@ -267,9 +267,10 @@ func applyThievesLamp(actions Actions, turns map[player.PlayerID]player.Turn) Ac
 		}
 
 		// Steal money
-		stolenCoin := target.Status.Coin * 0.3
-		target.Status.Coin -= stolenCoin
-		actor.Status.Coin += stolenCoin
+		stolenCoin := target.Status.Coin
+		stolenCoin.Multiply(0.3)
+		target.Status.Coin.SubtractCoin(stolenCoin)
+		actor.Status.Coin.AddCoin(stolenCoin)
 
 		// Steal items
 		// check if bodyguard?
